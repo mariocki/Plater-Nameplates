@@ -903,9 +903,11 @@ Plater.DefaultSpellRangeList = {
 		
 		--the unit is friendly or not using range check and non targets alpha
 		elseif (plateFrame [MEMBER_REACTION] >= 5 or (not DB_USE_RANGE_CHECK and not DB_USE_NON_TARGETS_ALPHA)) then
-			plateFrame.unitFrame:SetAlpha (inRangeAlpha)
-			plateFrame [MEMBER_RANGE] = true
-			plateFrame.unitFrame [MEMBER_RANGE] = true
+				plateFrame.unitFrame:SetAlpha (inRangeAlpha * 0.5)
+				plateFrame [MEMBER_RANGE] = false
+				plateFrame.unitFrame [MEMBER_RANGE] = false				
+				plateFrame.ActorNameSpecial:SetAlpha(inRangeAlpha * 0.5)
+				plateFrame.ActorTitleSpecial:SetAlpha(inRangeAlpha * 0.5)		
 			return
 		end
 
@@ -6334,6 +6336,7 @@ end
 			--when the option to show only the player name is enabled
 			--special string to show the player name
 			local nameFontString = plateFrame.ActorNameSpecial
+			-- ARP Hide players
 			--nameFontString:Show()
 			
 			--set the name in the string
@@ -6388,10 +6391,9 @@ end
 			end
 			
 			return
-		
-		elseif (plateFrame.IsNpcWithoutHealthBar and not Plater.IsNpcInIgnoreList (plateFrame, true)) then --not critical code
-			local textAlpha = 0.6
 
+		elseif (plateFrame.IsNpcWithoutHealthBar and not Plater.IsNpcInIgnoreList (plateFrame, true)) then --not critical code
+			
 			--reset points for special units
 			plateFrame.ActorNameSpecial:ClearAllPoints()
 			plateFrame.ActorTitleSpecial:ClearAllPoints()
@@ -6428,7 +6430,6 @@ end
 					end
 					
 					plateFrame.ActorNameSpecial:SetTextColor (r, g, b, a)
-					plateFrame.ActorNameSpecial:SetAlpha(textAlpha)
 					DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size)
 					DF:SetFontFace (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_font)
 					
@@ -6445,7 +6446,6 @@ end
 						PixelUtil.SetPoint (plateFrame.ActorTitleSpecial, "top", plateFrame.ActorNameSpecial, "bottom", 0, -2)
 						
 						plateFrame.ActorTitleSpecial:SetTextColor (r, g, b, a)
-						plateFrame.ActorTitleSpecial:SetAlpha(textAlpha)
 						DF:SetFontSize (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_size)
 						DF:SetFontFace (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_font)
 						
@@ -6458,7 +6458,6 @@ end
 				else
 					--it's a friendly npc
 					plateFrame.ActorNameSpecial:SetTextColor (unpack (plateConfigs.big_actorname_text_color))
-					plateFrame.ActorNameSpecial:SetAlpha(textAlpha)
 					DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size)
 					DF:SetFontFace (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_font)
 					
@@ -6475,7 +6474,6 @@ end
 						PixelUtil.SetPoint (plateFrame.ActorTitleSpecial, "top", plateFrame.ActorNameSpecial, "bottom", 0, -2)
 						
 						plateFrame.ActorTitleSpecial:SetTextColor (unpack (plateConfigs.big_actortitle_text_color))
-						plateFrame.ActorTitleSpecial:SetAlpha(textAlpha)
 						DF:SetFontSize (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_size)
 						DF:SetFontFace (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_font)
 						
@@ -6484,9 +6482,9 @@ end
 					end
 				end
 			else
+				-- ARP
 				if (Plater.IsQuestObjective (plateFrame)) then
 					plateFrame.ActorNameSpecial:SetTextColor (unpack (plateConfigs.big_actorname_text_color))
-					plateFrame.ActorNameSpecial:SetAlpha(textAlpha)
 					
 					--npc name
 					plateFrame.ActorNameSpecial:Show()
@@ -6513,8 +6511,6 @@ end
 						
 						plateFrame.ActorTitleSpecial:SetTextColor (unpack (plateConfigs.big_actortitle_text_color))
 						plateFrame.ActorNameSpecial:SetTextColor (unpack (plateConfigs.big_actorname_text_color))
-						plateFrame.ActorTitleSpecial:SetAlpha(textAlpha)
-						plateFrame.ActorNameSpecial:SetAlpha(textAlpha)
 						DF:SetFontSize (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_size)
 						DF:SetFontFace (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_font)
 						
@@ -6933,7 +6929,7 @@ end
 				end
 			
 			elseif (IS_IN_OPEN_WORLD and DB_PLATE_CONFIG [actorType].quest_enabled and Plater.IsQuestObjective (plateFrame)) then
---				Plater.ChangeHealthBarColor_Internal (healthBar, unpack (DB_PLATE_CONFIG [actorType].quest_color))
+--				Plater.ChangeHealthBarColor_Internal (healthBar, unpack (DB_PLATE_CONFIG [actorType].quest_color)) -- ARP
 
 				healthBar:Hide()
 				buffFrame:Hide()
@@ -9183,7 +9179,8 @@ end
 			end
 		end
 	end
-
+	
+	-- ARP
 	local function inTable(tbl, item)
 		for key, value in pairs(tbl) do
 			if value == item then return key end
@@ -9191,6 +9188,7 @@ end
 		return false
 	end
 
+	-- ARP
 	function Plater.SetNameplateFontOutline (unitFrame, outline)
 		if (unitFrame.unit) then
 			local outline_modes = {"NONE", "MONOCHROME", "OUTLINE", "THICKOUTLINE"}
@@ -9203,6 +9201,7 @@ end
 		end
 	end
 
+	-- ARP
 	function Plater.ResetNameplateFontOutline (unitFrame)
 		if (unitFrame.unit) then
 			local plateConfigs = DB_PLATE_CONFIG[unitFrame.ActorType]
