@@ -303,6 +303,9 @@ local MEMBER_NAME = "namePlateUnitName"
 local MEMBER_NAMELOWER = "namePlateUnitNameLower"
 local MEMBER_TARGET = "namePlateIsTarget"
 
+-- ARP
+local QUEST_GIVER = false --namePlateQuestGiver
+
 --> cache nameplate types for better reading the code
 local ACTORTYPE_FRIENDLY_PLAYER = "friendlyplayer"
 local ACTORTYPE_FRIENDLY_NPC = "friendlynpc"
@@ -778,6 +781,9 @@ Plater.DefaultSpellRangeList = {
 	--store quests the player is in
 	Plater.QuestCache = {}
 	
+	-- ARP all npcIds who have quests available
+	Plater.NpcsWithQuests = {}
+
 	--cache the profile settings for each actor type on this table, so scripts can have access to profile
 	Plater.ActorTypeSettingsCache = { --private
 		RefreshID = -1,
@@ -893,6 +899,9 @@ Plater.DefaultSpellRangeList = {
 
 	--> range check ~range
 	function Plater.CheckRange (plateFrame, onAdded)
+		if (not plateFrame) then
+			return
+		end
 
 		--value when the unit is in range
 		local inRangeAlpha = Plater.db.profile.range_check_in_range_or_target_alpha
@@ -903,12 +912,33 @@ Plater.DefaultSpellRangeList = {
 		
 		--the unit is friendly or not using range check and non targets alpha
 		elseif (plateFrame [MEMBER_REACTION] >= 5 or (not DB_USE_RANGE_CHECK and not DB_USE_NON_TARGETS_ALPHA)) then
-				plateFrame.unitFrame:SetAlpha (inRangeAlpha * 0.5)
-				plateFrame [MEMBER_RANGE] = false
-				plateFrame.unitFrame [MEMBER_RANGE] = false				
-				plateFrame.ActorNameSpecial:SetAlpha(inRangeAlpha * 0.5)
-				plateFrame.ActorTitleSpecial:SetAlpha(inRangeAlpha * 0.5)		
+			if (plateFrame[QUEST_GIVER]) then
+				plateFrame.unitFrame:SetAlpha (inRangeAlpha)
+				plateFrame.ActorNameSpecial:SetAlpha(inRangeAlpha)
+				plateFrame.ActorTitleSpecial:SetAlpha(inRangeAlpha)
+			else
+				if (plateFrame.ActorTitleSpecial and plateFrame.ActorTitleSpecial:GetText() ~= '' and plateFrame.ActorTitleSpecial:GetText() ~= nil) then
+					plateFrame.unitFrame:SetAlpha (inRangeAlpha * 0.66)
+					plateFrame.ActorNameSpecial:SetAlpha(inRangeAlpha * 0.66)
+					plateFrame.ActorTitleSpecial:SetAlpha(inRangeAlpha * 0.66)					
+				else
+					plateFrame.unitFrame:SetAlpha (inRangeAlpha * 0.25)
+					plateFrame.ActorNameSpecial:SetAlpha(inRangeAlpha * 0.25)
+					plateFrame.ActorTitleSpecial:SetAlpha(inRangeAlpha * 0.25)
+				end
+			end
+			plateFrame [MEMBER_RANGE] = false
+			plateFrame.unitFrame [MEMBER_RANGE] = false				
 			return
+		end
+
+		if (plateFrame.IsNpcWithoutHealthBar) then
+			plateFrame.unitFrame:SetAlpha (inRangeAlpha * 0.4)
+			plateFrame.ActorNameSpecial:SetAlpha(inRangeAlpha * 0.4)
+			plateFrame.ActorTitleSpecial:SetAlpha(inRangeAlpha * 0.4)	
+			plateFrame [MEMBER_RANGE] = false
+			plateFrame.unitFrame [MEMBER_RANGE] = false		
+			return			
 		end
 
 		--this unit is target
@@ -2092,7 +2122,7 @@ Plater.DefaultSpellRangeList = {
 			
 			IS_IN_OPEN_WORLD = Plater.ZoneInstanceType == "none"
 			IS_IN_INSTANCE = Plater.ZoneInstanceType == "raid" or Plater.ZoneInstanceType == "party"
-			
+
 			Plater.UpdateAllPlates()
 			Plater.RefreshAutoToggle()
 			
@@ -2110,6 +2140,8 @@ Plater.DefaultSpellRangeList = {
 		end,
 
 		ZONE_CHANGED = function()
+			--ARP
+			Plater:UpdateQuestNPCIds()
 			Plater.RunFunctionForEvent ("ZONE_CHANGED_NEW_AREA")
 		end,
 		
@@ -2119,6 +2151,8 @@ Plater.DefaultSpellRangeList = {
 
 			Plater.ScheduleRunFunctionForEvent (1, "ZONE_CHANGED_NEW_AREA")
 			Plater.ScheduleRunFunctionForEvent (1, "FRIENDLIST_UPDATE")
+			--ARP
+			Plater:UpdateQuestNPCIds()
 
 			Plater.PlayerGuildName = GetGuildInfo ("player")
 			if (not Plater.PlayerGuildName or Plater.PlayerGuildName == "") then
@@ -3034,6 +3068,71 @@ Plater.DefaultSpellRangeList = {
 			
 		end,
 	}
+
+	-- ARP
+	function Plater.IsQuestGiver(plateFrame)
+		if (not plateFrame or not plateFrame [MEMBER_NPCID]) then
+			return
+		end
+		local grailNPCName = Grail:NPCName(plateFrame [MEMBER_NPCID])
+
+		--print(plateFrame [MEMBER_NPCID] .. " converted to " .. grailNPCName)
+		plateFrame[QUEST_GIVER] = tContains(Plater.NpcsWithQuests, grailNPCName)
+
+		--print("checking if " .. grailNPCName .. " is a quest giver: " .. tostring(plateFrame [QUEST_GIVER]))
+	end
+
+	-- ARP
+	function Plater.UpdateQuestNPCIds()
+		if (not Grail) then
+			return
+		end
+
+		Grail:_AddWorldQuests()
+
+		local allQuestIdsInMap = Grail:QuestsInMap()
+
+		if (not allQuestIdsInMap) then
+			return
+		end
+
+		local allQuestsInMapAvailableToday = {}
+		for k, v in pairs(allQuestIdsInMap) do
+			--print(v .. " : " .. Grail:StatusCode(v))
+			if (Grail:IsWorldQuest(v)) then
+				--print(v .. " is a WQ")
+				if ((Grail:IsAvailable(v) or Grail:StatusCode(v) == 0 or bit.band(Grail:StatusCode(v), Grail.bitMaskInLogComplete) > 0) ) then -- and not Grail:IsQuestCompleted(v) ) then
+					--print(v .. " AVAILABLE " .. Grail:StatusCode(v))
+					tinsert(allQuestsInMapAvailableToday, v)
+				else
+					--print(v .. " world quest and not available")
+				end
+			else
+				if (not Grail:IsQuestCompleted(v) and (Grail:CanAcceptQuest(v) or Grail:StatusCode(v) == 0 or bit.band(Grail:StatusCode(v), Grail.bitMaskInLogComplete) > 0)) then
+					tinsert(allQuestsInMapAvailableToday, v)
+					--print(v .. " AVAILABLE " .. Grail:StatusCode(v))
+				else
+					--print(v .. " quest completed")
+				end
+			end
+		end
+
+		local npcsWithAQuest = {}
+		for k, v in pairs(allQuestsInMapAvailableToday) do
+			local npcsWithQuest = Grail:QuestNPCAccepts(v)
+			for k2, v2 in pairs(npcsWithQuest) do
+				if (v2) then -- and v2 > 0
+					--print(v2 .. " can offer " .. v)
+					if (Grail:IsNPCAvailable(v2) and not tContains(npcsWithAQuest, v2)) then
+						tinsert(npcsWithAQuest, Grail:NPCName(v2))
+						--print(Grail:NPCName(v2) .. " - " .. v2 .. " has a quest: " .. v)
+					end
+				end
+			end
+		end
+
+		Plater.NpcsWithQuests = npcsWithAQuest
+	end
 
 	function Plater.EventHandler (_, event, ...) --private
 		local func = eventFunctions [event]
@@ -6291,6 +6390,9 @@ end
 	-- needReset is true when the previous unit type shown on this place is different from the current unit
 	function Plater.UpdatePlateText (plateFrame, plateConfigs, needReset) --private
 	
+		-- ARP
+		Plater.IsQuestGiver(plateFrame)
+
 		-- ensure castBar updates are done, as this needs to be done for all types of plates...
 		local spellnameString = plateFrame.unitFrame.castBar.Text
 		local spellPercentString = plateFrame.unitFrame.castBar.percentText
@@ -6337,7 +6439,11 @@ end
 			--special string to show the player name
 			local nameFontString = plateFrame.ActorNameSpecial
 			-- ARP Hide players
-			--nameFontString:Show()
+			if (string.match(plateFrame [MEMBER_GUID], "Player")) then
+				nameFontString:Hide()
+			else
+				nameFontString:Show()
+			end
 			
 			--set the name in the string
 			plateFrame.CurrentUnitNameString = nameFontString
@@ -6430,7 +6536,13 @@ end
 					end
 					
 					plateFrame.ActorNameSpecial:SetTextColor (r, g, b, a)
-					DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size)
+					-- ARP
+					if (plateFrame[QUEST_GIVER]) then
+						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.5)						
+						--print(plateFrame.ActorNameSpecial:GetText() .. "1")
+					else
+						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size)
+					end					
 					DF:SetFontFace (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_font)
 					
 					--DF:SetFontOutline (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_shadow)
@@ -6448,7 +6560,7 @@ end
 						plateFrame.ActorTitleSpecial:SetTextColor (r, g, b, a)
 						DF:SetFontSize (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_size)
 						DF:SetFontFace (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_font)
-						
+
 						--DF:SetFontOutline (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_shadow)
 						Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_outline, plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
 					else
@@ -6458,7 +6570,14 @@ end
 				else
 					--it's a friendly npc
 					plateFrame.ActorNameSpecial:SetTextColor (unpack (plateConfigs.big_actorname_text_color))
-					DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size)
+					-- ARP
+					if (plateFrame[QUEST_GIVER]) then
+						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.5)
+						plateFrame.ActorNameSpecial:SetTextColor(0.29, 0.6, 1, 1)
+						--print(plateFrame.ActorNameSpecial:GetText() .. "3")
+					else
+						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size)
+					end
 					DF:SetFontFace (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_font)
 					
 					--DF:SetFontOutline (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_shadow)
@@ -6476,9 +6595,14 @@ end
 						plateFrame.ActorTitleSpecial:SetTextColor (unpack (plateConfigs.big_actortitle_text_color))
 						DF:SetFontSize (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_size)
 						DF:SetFontFace (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_font)
-						
+
 						--DF:SetFontOutline (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_shadow)
 						Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_outline, plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
+					else
+						if (not plateFrame[QUEST_GIVER] and not plateFrame[MEMBER_QUEST]) then 
+							plateFrame.ActorNameSpecial:Hide()
+						end
+						plateFrame.ActorTitleSpecial:Hide()
 					end
 				end
 			else
@@ -6492,44 +6616,56 @@ end
 					plateFrame.CurrentUnitNameString = plateFrame.ActorNameSpecial
 					Plater.UpdateUnitName (plateFrame)
 
-					DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size)
+					-- ARP
+					if (plateFrame[QUEST_GIVER]) then
+						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.5)
+						--print(plateFrame.ActorNameSpecial:GetText() .. "5")
+					else
+						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size)
+					end					
 					DF:SetFontFace (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_font)
 					
 					--DF:SetFontOutline (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_shadow)
 					Plater.SetFontOutlineAndShadow (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_outline, plateConfigs.big_actorname_text_shadow_color, plateConfigs.big_actorname_text_shadow_color_offset[1], plateConfigs.big_actorname_text_shadow_color_offset[2])
 				end
+
 				--scan tooltip to check if there's an title for this npc
 				local subTitle = Plater.GetActorSubName (plateFrame)
-				if (subTitle and subTitle ~= "") then
-					if (not subTitle:match ("%d")) then --isn't level
+				if (subTitle and subTitle ~= ""and not subTitle:match ("%d")) then --isn't level
+					plateFrame.ActorTitleSpecial:Show()
+					subTitle = DF:RemoveRealmName (subTitle)
+					plateFrame.ActorTitleSpecial:SetText ("<" .. subTitle .. ">")
+					plateFrame.ActorTitleSpecial:ClearAllPoints()
+					PixelUtil.SetPoint (plateFrame.ActorTitleSpecial, "top", plateFrame.ActorNameSpecial, "bottom", 0, -2)
+					
+					plateFrame.ActorTitleSpecial:SetTextColor (unpack (plateConfigs.big_actortitle_text_color))
+					plateFrame.ActorNameSpecial:SetTextColor (unpack (plateConfigs.big_actorname_text_color))
+					DF:SetFontSize (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_size)
+					DF:SetFontFace (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_font)
 
-						plateFrame.ActorTitleSpecial:Show()
-						subTitle = DF:RemoveRealmName (subTitle)
-						plateFrame.ActorTitleSpecial:SetText ("<" .. subTitle .. ">")
-						plateFrame.ActorTitleSpecial:ClearAllPoints()
-						PixelUtil.SetPoint (plateFrame.ActorTitleSpecial, "top", plateFrame.ActorNameSpecial, "bottom", 0, -2)
-						
-						plateFrame.ActorTitleSpecial:SetTextColor (unpack (plateConfigs.big_actortitle_text_color))
-						plateFrame.ActorNameSpecial:SetTextColor (unpack (plateConfigs.big_actorname_text_color))
-						DF:SetFontSize (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_size)
-						DF:SetFontFace (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_font)
-						
-						--DF:SetFontOutline (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_shadow)
-						Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_outline, plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
-						
-						--npc name
-						plateFrame.ActorNameSpecial:Show()
-
-						plateFrame.CurrentUnitNameString = plateFrame.ActorNameSpecial
-						Plater.UpdateUnitName (plateFrame)
-
-						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size)
-						DF:SetFontFace (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_font)
-						
-						--DF:SetFontOutline (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_shadow)
-						Plater.SetFontOutlineAndShadow (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_outline, plateConfigs.big_actorname_text_shadow_color, plateConfigs.big_actorname_text_shadow_color_offset[1], plateConfigs.big_actorname_text_shadow_color_offset[2])
-					end
+					--DF:SetFontOutline (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_shadow)
+					Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_outline, plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
+				else
+					plateFrame.ActorTitleSpecial:Hide()
 				end
+
+				--npc name
+				plateFrame.ActorNameSpecial:Show()
+
+				plateFrame.CurrentUnitNameString = plateFrame.ActorNameSpecial
+				Plater.UpdateUnitName (plateFrame)
+
+				-- ARP
+				if (plateFrame[QUEST_GIVER]) then
+					DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.5)
+					--print(plateFrame.ActorNameSpecial:GetText() .. "7")
+				else
+					DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size)
+				end
+				DF:SetFontFace (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_font)
+				
+				--DF:SetFontOutline (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_shadow)
+				Plater.SetFontOutlineAndShadow (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_outline, plateConfigs.big_actorname_text_shadow_color, plateConfigs.big_actorname_text_shadow_color_offset[1], plateConfigs.big_actorname_text_shadow_color_offset[2])
 			end
 			return
 		end
@@ -6866,6 +7002,9 @@ end
 		plateFrame [MEMBER_QUEST] = false
 		unitFrame [MEMBER_QUEST] = false
 		
+		-- ARP
+		plateFrame[QUEST_GIVER] = false
+
 		plateFrame.ActorNameSpecial:Hide()
 		plateFrame.ActorTitleSpecial:Hide()
 		plateFrame.Top3DFrame:Hide()
@@ -7948,6 +8087,8 @@ end
 		[32639] = true, --Gnimo
 		[35642] = true, --Jeeves
 		[101527] = true, --Blingtron 6000
+		[32641] = true, --Drix Blackwrench
+		[32642] = true, --Mojodishu
 	}
 
 	function Plater.IsNpcInIgnoreList (plateFrame, onlyProfession) --private
@@ -9181,19 +9322,11 @@ end
 	end
 	
 	-- ARP
-	local function inTable(tbl, item)
-		for key, value in pairs(tbl) do
-			if value == item then return key end
-		end
-		return false
-	end
-
-	-- ARP
 	function Plater.SetNameplateFontOutline (unitFrame, outline)
 		if (unitFrame.unit) then
 			local outline_modes = {"NONE", "MONOCHROME", "OUTLINE", "THICKOUTLINE"}
 			local plateConfigs = DB_PLATE_CONFIG[unitFrame.ActorType]
-			if (outline and outline ~= '' and inTable(outline_modes, outline)) then
+			if (outline and outline ~= '' and tContains(outline_modes, outline)) then
 				Plater.SetFontOutlineAndShadow (unitFrame.unitName, outline, plateConfigs.actorname_text_shadow_color, plateConfigs.actorname_text_shadow_color_offset[1], plateConfigs.actorname_text_shadow_color_offset[2])
 			else
 				Plater.SetFontOutlineAndShadow (unitFrame.unitName, plateConfigs.actorname_text_outline, plateConfigs.actorname_text_shadow_color, plateConfigs.actorname_text_shadow_color_offset[1], plateConfigs.actorname_text_shadow_color_offset[2])
