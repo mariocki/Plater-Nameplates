@@ -3,6 +3,7 @@
 ## Notes: Nameplate addon designed for advanced users.
 ## SavedVariables: PlaterDB
 ## SavedVariablesPerCharacter: PlaterDBChr
+## OptionalDeps: Grail
 
 #@no-lib-strip@
 libs\libs.xml

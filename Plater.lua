@@ -2151,8 +2151,6 @@ Plater.DefaultSpellRangeList = {
 
 			Plater.ScheduleRunFunctionForEvent (1, "ZONE_CHANGED_NEW_AREA")
 			Plater.ScheduleRunFunctionForEvent (1, "FRIENDLIST_UPDATE")
-			--ARP
-			Plater:UpdateQuestNPCIds()
 
 			Plater.PlayerGuildName = GetGuildInfo ("player")
 			if (not Plater.PlayerGuildName or Plater.PlayerGuildName == "") then
@@ -2184,6 +2182,9 @@ Plater.DefaultSpellRangeList = {
 
 			--create the frame to hold the plater resoruce bar
 			Plater.CreatePlaterResourceFrame() --~resource
+
+			--ARP
+			Plater:UpdateQuestNPCIds()			
 		end,
 
 		PLAYER_LOGOUT = function()
@@ -3071,9 +3072,8 @@ Plater.DefaultSpellRangeList = {
 
 	-- ARP
 	function Plater.IsQuestGiver(plateFrame)
-		if (not plateFrame or not plateFrame [MEMBER_NPCID]) then
-			return
-		end
+		if (not plateFrame or not plateFrame [MEMBER_NPCID]) then return end
+
 		local grailNPCName = Grail:NPCName(plateFrame [MEMBER_NPCID])
 
 		--print(plateFrame [MEMBER_NPCID] .. " converted to " .. grailNPCName)
@@ -3084,35 +3084,31 @@ Plater.DefaultSpellRangeList = {
 
 	-- ARP
 	function Plater.UpdateQuestNPCIds()
-		if (not Grail) then
-			return
-		end
+		if (not Grail) then	return end
+
+		--if (not Grail.IsPrimed()) then return end
 
 		Grail:_AddWorldQuests()
 
 		local allQuestIdsInMap = Grail:QuestsInMap()
 
-		if (not allQuestIdsInMap) then
-			return
-		end
+		if (not allQuestIdsInMap) then return end
 
 		local allQuestsInMapAvailableToday = {}
 		for k, v in pairs(allQuestIdsInMap) do
-			--print(v .. " : " .. Grail:StatusCode(v))
 			if (Grail:IsWorldQuest(v)) then
-				--print(v .. " is a WQ")
 				if ((Grail:IsAvailable(v) or Grail:StatusCode(v) == 0 or bit.band(Grail:StatusCode(v), Grail.bitMaskInLogComplete) > 0) ) then -- and not Grail:IsQuestCompleted(v) ) then
-					--print(v .. " AVAILABLE " .. Grail:StatusCode(v))
+					--print(v .. " : " .. Grail:StatusCode(v) .. " WQ AVAILABLE ")
 					tinsert(allQuestsInMapAvailableToday, v)
 				else
-					--print(v .. " world quest and not available")
+					--print(v .. " : " .. Grail:StatusCode(v) .. " WQ and not available")
 				end
 			else
 				if (not Grail:IsQuestCompleted(v) and (Grail:CanAcceptQuest(v) or Grail:StatusCode(v) == 0 or bit.band(Grail:StatusCode(v), Grail.bitMaskInLogComplete) > 0)) then
 					tinsert(allQuestsInMapAvailableToday, v)
-					--print(v .. " AVAILABLE " .. Grail:StatusCode(v))
+					--print(v .. " : " .. Grail:StatusCode(v) .. " AVAILABLE ")
 				else
-					--print(v .. " quest completed")
+					--print(v .. " : " .. Grail:StatusCode(v) .. " quest completed")
 				end
 			end
 		end
@@ -6969,6 +6965,29 @@ end
 		levelString:SetTextColor (color.r, color.g, color.b, Plater.db.profile.level_text_alpha)
 	end	
 
+	-- ARP
+	function Plater.UpdateQuestGiver(plateFrame)
+		if (not plateFrame.unitFrame.ExtraQuestMarker22154) then
+			plateFrame.unitFrame.ExtraQuestMarker22154 = plateFrame.unitFrame:CreateTexture (nil, "overlay")
+			local texture = plateFrame.unitFrame.ExtraQuestMarker22154
+			
+			--texture:SetTexture ([[Interface\OPTIONSFRAME\UI-OptionsFrame-NewFeatureIcon]])
+			texture:SetTexture ([[Interface\Addons\SharedMedia_MyMedia\background\Quest.tga]])
+			texture:SetSize (18, 18)
+			Plater.SetAnchor (texture, {
+				side = 6, --right side
+				x = 0,
+				y = 0
+			}, plateFrame.ActorNameSpecial)
+		end
+
+		if (plateFrame[QUEST_GIVER]) then
+            plateFrame.unitFrame.ExtraQuestMarker22154:Show()
+        else
+            plateFrame.unitFrame.ExtraQuestMarker22154:Hide()
+        end
+	end
+
 	-- ~updateplate ~update ~updatenameplate
 	function Plater.UpdatePlateFrame (plateFrame, actorType, forceUpdate, justAdded)
 		actorType = actorType or plateFrame.actorType
@@ -7235,6 +7254,9 @@ end
 			end
 		end
 		
+		-- ARP
+		Plater.UpdateQuestGiver(plateFrame)
+
 		--update the plate size for this unit
 		Plater.UpdatePlateSize (plateFrame)
 		
