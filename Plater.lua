@@ -6977,9 +6977,8 @@ end
 			plateFrame.unitFrame.ExtraQuestMarker22154 = plateFrame.unitFrame:CreateTexture (nil, "overlay")
 			local texture = plateFrame.unitFrame.ExtraQuestMarker22154
 			
-			--texture:SetTexture ([[Interface\OPTIONSFRAME\UI-OptionsFrame-NewFeatureIcon]])
 			texture:SetTexture ([[Interface\Addons\SharedMedia_MyMedia\background\Quest.tga]])
-			texture:SetSize (18, 18)
+			texture:SetSize (14, 14)
 			Plater.SetAnchor (texture, {
 				side = 6, --right side
 				x = 0,
@@ -8117,6 +8116,7 @@ end
 		[101527] = true, --Blingtron 6000
 		[32641] = true, --Drix Blackwrench
 		[32642] = true, --Mojodishu
+		[143262] = true, --Captain (bird)
 	}
 
 	function Plater.IsNpcInIgnoreList (plateFrame, onlyProfession) --private
