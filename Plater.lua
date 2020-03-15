@@ -909,23 +909,25 @@ Plater.DefaultSpellRangeList = {
 		--if is using the no combat alpha and the unit isn't in combat, ignore the range check, no combat alpha is disabled by default
 		if (plateFrame [MEMBER_NOCOMBAT]) then
 			return
-		
+		end
+
+		if (plateFrame[QUEST_GIVER]) then
+			plateFrame.unitFrame:SetAlpha (inRangeAlpha)
+			plateFrame.ActorNameSpecial:SetAlpha(inRangeAlpha)
+			plateFrame.ActorTitleSpecial:SetAlpha(inRangeAlpha)
+			return
+		end
+
 		--the unit is friendly or not using range check and non targets alpha
-		elseif (plateFrame [MEMBER_REACTION] >= 5 or (not DB_USE_RANGE_CHECK and not DB_USE_NON_TARGETS_ALPHA)) then
-			if (plateFrame[QUEST_GIVER]) then
-				plateFrame.unitFrame:SetAlpha (inRangeAlpha)
-				plateFrame.ActorNameSpecial:SetAlpha(inRangeAlpha)
-				plateFrame.ActorTitleSpecial:SetAlpha(inRangeAlpha)
+		if (plateFrame [MEMBER_REACTION] >= 5 or (not DB_USE_RANGE_CHECK and not DB_USE_NON_TARGETS_ALPHA)) then
+			if (plateFrame.ActorTitleSpecial and plateFrame.ActorTitleSpecial:GetText() ~= '' and plateFrame.ActorTitleSpecial:GetText() ~= nil) then
+				plateFrame.unitFrame:SetAlpha (inRangeAlpha * 0.66)
+				plateFrame.ActorNameSpecial:SetAlpha(inRangeAlpha * 0.66)
+				plateFrame.ActorTitleSpecial:SetAlpha(inRangeAlpha * 0.66)					
 			else
-				if (plateFrame.ActorTitleSpecial and plateFrame.ActorTitleSpecial:GetText() ~= '' and plateFrame.ActorTitleSpecial:GetText() ~= nil) then
-					plateFrame.unitFrame:SetAlpha (inRangeAlpha * 0.66)
-					plateFrame.ActorNameSpecial:SetAlpha(inRangeAlpha * 0.66)
-					plateFrame.ActorTitleSpecial:SetAlpha(inRangeAlpha * 0.66)					
-				else
-					plateFrame.unitFrame:SetAlpha (inRangeAlpha * 0.25)
-					plateFrame.ActorNameSpecial:SetAlpha(inRangeAlpha * 0.25)
-					plateFrame.ActorTitleSpecial:SetAlpha(inRangeAlpha * 0.25)
-				end
+				plateFrame.unitFrame:SetAlpha (inRangeAlpha * 0.25)
+				plateFrame.ActorNameSpecial:SetAlpha(inRangeAlpha * 0.25)
+				plateFrame.ActorTitleSpecial:SetAlpha(inRangeAlpha * 0.25)
 			end
 			plateFrame [MEMBER_RANGE] = false
 			plateFrame.unitFrame [MEMBER_RANGE] = false				
@@ -3116,6 +3118,7 @@ Plater.DefaultSpellRangeList = {
 		local npcsWithAQuest = {}
 		for k, v in pairs(allQuestsInMapAvailableToday) do
 			local npcsWithQuest = Grail:QuestNPCAccepts(v)
+			if (not npcsWithQuest) then return end
 			for k2, v2 in pairs(npcsWithQuest) do
 				if (v2) then -- and v2 > 0
 					--print(v2 .. " can offer " .. v)
@@ -6529,6 +6532,9 @@ end
 						if (plateFrame [MEMBER_REACTION] <= 3) then
 							r, g, b, a = 1, .05, .05, 1
 						end
+						if (plateFrame[QUEST_GIVER]) then
+							r, g, b, a = 0.29, 0.6, 1, 1
+						end
 					end
 					
 					plateFrame.ActorNameSpecial:SetTextColor (r, g, b, a)
@@ -6553,7 +6559,7 @@ end
 						plateFrame.ActorTitleSpecial:ClearAllPoints()
 						PixelUtil.SetPoint (plateFrame.ActorTitleSpecial, "top", plateFrame.ActorNameSpecial, "bottom", 0, -2)
 						
-						plateFrame.ActorTitleSpecial:SetTextColor (r, g, b, a)
+						--plateFrame.ActorTitleSpecial:SetTextColor (unpack (plateConfigs.big_actortitle_text_color))
 						DF:SetFontSize (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_size)
 						DF:SetFontFace (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_font)
 
