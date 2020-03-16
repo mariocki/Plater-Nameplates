@@ -2047,6 +2047,7 @@ Plater.DefaultSpellRangeList = {
 		end,
 		QUEST_LOG_UPDATE = function()
 			Plater.QuestLogUpdated()
+			C_Timer.After (1, Plater.UpdateQuestNPCIds)
 		end,
 		UNIT_QUEST_LOG_CHANGED = function()
 			Plater.QuestLogUpdated()
@@ -2142,9 +2143,10 @@ Plater.DefaultSpellRangeList = {
 		end,
 
 		ZONE_CHANGED = function()
-			--ARP
-			Plater:UpdateQuestNPCIds()
 			Plater.RunFunctionForEvent ("ZONE_CHANGED_NEW_AREA")
+
+			--ARP
+			C_Timer.After (2, Plater.UpdateQuestNPCIds)
 		end,
 		
 		PLAYER_ENTERING_WORLD = function()
@@ -2186,7 +2188,7 @@ Plater.DefaultSpellRangeList = {
 			Plater.CreatePlaterResourceFrame() --~resource
 
 			--ARP
-			Plater:UpdateQuestNPCIds()			
+			C_Timer.After (2, Plater.UpdateQuestNPCIds)
 		end,
 
 		PLAYER_LOGOUT = function()
@@ -3120,17 +3122,21 @@ Plater.DefaultSpellRangeList = {
 			local npcsWithQuest = Grail:QuestNPCAccepts(v)
 			if (not npcsWithQuest) then return end
 			for k2, v2 in pairs(npcsWithQuest) do
-				if (v2) then -- and v2 > 0
-					--print(v2 .. " can offer " .. v)
-					if (Grail:IsNPCAvailable(v2) and not tContains(npcsWithAQuest, v2)) then
-						tinsert(npcsWithAQuest, Grail:NPCName(v2))
-						--print(Grail:NPCName(v2) .. " - " .. v2 .. " has a quest: " .. v)
+				if (v2) then 
+					local npcId = Grail:_NPCIndex(v2)
+					if (npcId) then
+						print(v2 .. " (" .. npcId .. ")" .. " can offer " .. v)
+						if (Grail:IsNPCAvailable(v2) and not tContains(npcsWithAQuest, v2)) then
+							tinsert(npcsWithAQuest, Grail:NPCName(v2))
+							print(Grail:NPCName(npcId) .. " has a quest: " .. v)
+						end
 					end
 				end
 			end
 		end
 
 		Plater.NpcsWithQuests = npcsWithAQuest
+		print("==========")
 	end
 
 	function Plater.EventHandler (_, event, ...) --private
@@ -8337,7 +8343,7 @@ end
 		local tooltipFrame = PlaterPetOwnerFinder or CreateFrame ("GameTooltip", "PlaterPetOwnerFinder", nil, "GameTooltipTemplate")
 		
 		tooltipFrame:SetOwner (WorldFrame, "ANCHOR_NONE")
-		tooltipFrame:SetHyperlink ("unit:" .. serial or "")
+		tooltipFrame:SetHyperlink ("unit:" .. (serial or ""))
 		
 		local isPlayerPet = false
 		
@@ -9928,7 +9934,6 @@ end
 	local blockedFunctions = {
 		-- Lua functions that may allow breaking out of the environment
 		getfenv = true,
-		getfenv = true,
 		loadstring = true,
 		pcall = true,
 		xpcall = true,
@@ -10004,7 +10009,6 @@ end
 		ApplyPatches = true,
 		RefreshConfig = true,
 		RefreshConfigProfileChanged = true,
-		RefreshConfig = true,
 		SaveConsoleVariables = true,
 		GetSettings = true,
 		CodeTypeNames = true,
@@ -10066,7 +10070,6 @@ end
 		CreatePlaterButtonAtInterfaceOptions = true,
 		SetCVarsOnFirstRun = true,
 		GetActorSubName = true,
-		QuestLogUpdated = true,
 		QuestLogUpdated = true,
 		GetNpcIDFromGUID = true,
 		GetNpcID = true,
