@@ -300,6 +300,72 @@ end
 
 
 --shared functions between all script tabs
+	local do_script_or_hook_import = function (text, scriptType, keepExisting)
+		if (scriptType == "hook") then
+			--the user inserted a string for a hook
+			--call the external function to import this script with ignoreRevision, overrideExisting and showDebug
+			local importSuccess, newObject = Plater.ImportScriptString (text, true, true, true, keepExisting)
+			if (importSuccess) then
+				PlaterOptionsPanelContainer:SelectIndex (Plater, PLATER_OPTIONS_HOOKING_TAB)
+				local mainFrame = PlaterOptionsPanelContainer
+				local hookFrame = mainFrame.AllFrames [PLATER_OPTIONS_HOOKING_TAB]
+				hookFrame.EditScript (newObject)
+				hookFrame.ScriptSelectionScrollBox:Refresh()
+			end
+		elseif (scriptType == "script") then
+			local importSuccess, newObject = Plater.ImportScriptString (text, true, true, true, keepExisting)
+			if (importSuccess) then
+				PlaterOptionsPanelContainer:SelectIndex (Plater, PLATER_OPTIONS_SCRIPTING_TAB)
+				local mainFrame = PlaterOptionsPanelContainer
+				local scriptingFrame = mainFrame.AllFrames [PLATER_OPTIONS_SCRIPTING_TAB]
+				scriptingFrame.EditScript (newObject)
+				scriptingFrame.ScriptSelectionScrollBox:Refresh()
+			end
+		else
+			--check if the user in importing a profile in the scripting tab
+			if (indexScriptTable.plate_config) then
+				DF:ShowErrorMessage ("Invalid Script or Mod.\n\nImport profiles at the Profiles tab.")
+			end
+			Plater:Msg ("Cannot import: data imported is invalid")
+		end
+	end
+
+	local import_mod_or_script = function (text)
+		--cleanup the text removing extra spaces and break lines
+		text = DF:Trim (text)
+		
+		if (string.len (text) > 0) then
+		
+			local indexScriptTable = Plater.DecompressData (text, "print")
+			--print(DF.table.dump(indexScriptTable))
+			
+			if (indexScriptTable and type (indexScriptTable) == "table") then
+				
+				indexScriptTable = Plater.MigrateScriptModImport (indexScriptTable)
+				--print(DF.table.dump(indexScriptTable))
+			
+				local scriptType = Plater.GetDecodedScriptType (indexScriptTable)
+				
+				local promptToOverwrite = false
+				local scriptDB = Plater.GetScriptDB (scriptType)
+				local newScript = Plater.BuildScriptObjectFromIndexTable (indexScriptTable, scriptType)
+				for i = 1, #scriptDB do
+					local scriptObject = scriptDB [i]
+					if (scriptObject.Name == newScript.Name) then
+						promptToOverwrite = true
+					end
+				end
+				
+				if promptToOverwrite then
+					DF:ShowPromptPanel ("This Mod/Script already exists. Do you want to overwrite it?\\nClicking 'No' will create a copy instead. To cancel close this window wiht the 'x'.", function() do_script_or_hook_import (text, scriptType, false) end, function() do_script_or_hook_import (text, scriptType, true) end, true, 500)
+				else
+					do_script_or_hook_import (text, scriptType, true)
+				end
+			else
+				Plater:Msg ("Cannot import: data imported is invalid")
+			end
+		end
+	end
 
 	local onclick_menu_scroll_line = function (self, scriptId, option, mainFrame)
 		if (option == "editscript") then

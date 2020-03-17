@@ -2901,6 +2901,9 @@ Plater.DefaultSpellRangeList = {
 					unitFrame.Settings.ShowUnitName = false
 					unitFrame.unitName:Hide()
 					
+					--setup castbar
+					unitFrame.Settings.ShowCastBar = DB_PLATE_CONFIG.player.castbar_enabled
+					
 					plateFrame.PlateConfig = DB_PLATE_CONFIG.player
 					Plater.UpdatePlateFrame (plateFrame, ACTORTYPE_PLAYER, nil, true)
 					Plater.OnUpdateHealth (healthBar)
@@ -2920,6 +2923,7 @@ Plater.DefaultSpellRangeList = {
 							plateFrame.PlateConfig = DB_PLATE_CONFIG.friendlyplayer
 							Plater.UpdatePlateFrame (plateFrame, ACTORTYPE_FRIENDLY_PLAYER, nil, true)
 							actorType = ACTORTYPE_FRIENDLY_PLAYER
+							unitFrame.Settings.ShowCastBar = not DB_CASTBAR_HIDE_FRIENDLY
 							if (DB_CASTBAR_HIDE_FRIENDLY) then
 								CastingBarFrame_SetUnit (castBar, nil, nil, nil)
 							end
@@ -2928,6 +2932,7 @@ Plater.DefaultSpellRangeList = {
 							plateFrame.PlateConfig = DB_PLATE_CONFIG.enemyplayer
 							Plater.UpdatePlateFrame (plateFrame, ACTORTYPE_ENEMY_PLAYER, nil, true)
 							actorType = ACTORTYPE_ENEMY_PLAYER
+							unitFrame.Settings.ShowCastBar = not DB_CASTBAR_HIDE_ENEMIES
 							if (DB_CASTBAR_HIDE_ENEMIES) then
 								CastingBarFrame_SetUnit (castBar, nil, nil, nil)
 							end
@@ -10656,9 +10661,19 @@ end
 	--check the type of indexes in the indexScriptTable to determine which type of script is this
 	--this is done to avoid sending an extra index just to tell which type of script is the string
 	function Plater.GetDecodedScriptType (indexScriptTable)
-		if (type (indexScriptTable [9]) == "table") then --hook
+
+		-- newer versions
+		if indexScriptTable.type == "hook" then
 			return "hook"
-		elseif (type (indexScriptTable [9]) == "number") then --script
+		elseif indexScriptTable.type == "script" then
+			return "script"
+		end
+	
+		-- fallback for old versions
+		indexScriptTable = Plater.MigrateScriptModImport (indexScriptTable) -- just to make sure this works as intended...
+		if (type (indexScriptTable ["9"]) == "table") then --hook
+			return "hook"
+		elseif (type (indexScriptTable ["9"]) == "number") then --script
 			return "script"
 		end
 	end
@@ -10703,6 +10718,31 @@ end
 			--table.wipe (PlaterScriptLibrary)
 		end
 	end
+	
+	-- migrate imports to string-based indexes
+	function Plater.MigrateScriptModImport (indexScriptTable)
+		local newindexScriptTable = {}
+		
+		if not indexScriptTable or type(indexScriptTable) ~= "table" then
+			return newindexScriptTable
+		end
+		
+		-- generate a keys list and a tmpTable with all string keys
+		for k,v in pairs(indexScriptTable) do
+			newindexScriptTable[k .. ""] = v
+		end
+		
+		-- if index 2 or 5 are empty, fill them (icons for mods/scripts)
+		if not newindexScriptTable["2"] then
+			--newindexScriptTable["2"] = 134400
+		end
+		if not newindexScriptTable["5"] then
+			--newindexScriptTable["5"] = 134400
+		end
+		
+		--print(DF.table.dump(newindexScriptTable))
+		return newindexScriptTable
+	end
 
 	--import a string from any source with more options than the convencional importer
 	--this is used when importing scripts from the library and when the user inserted the wrong script type in the import box at hook or script, e.g. imported a hook in the script import box
@@ -10716,6 +10756,8 @@ end
 		
 		local indexScriptTable = Plater.DecompressData (text, "print")
 		if (indexScriptTable and type (indexScriptTable) == "table") then
+		
+			indexScriptTable = Plater.MigrateScriptModImport (indexScriptTable)
 
 			--get the script type, if is a hook or regular script
 			local scriptType = Plater.GetDecodedScriptType (indexScriptTable)
@@ -10885,20 +10927,20 @@ end
 		if (scriptType == "hook") then
 			local scriptObject = {}
 			scriptObject.Enabled 		= true --imported scripts are always enabled
-			scriptObject.Name		= indexTable [1]
-			scriptObject.Icon			= indexTable [2]
-			scriptObject.Desc		= indexTable [3]
-			scriptObject.Author		= indexTable [4]
-			scriptObject.Time			= indexTable [5]
-			scriptObject.Revision		= indexTable [6]
-			scriptObject.PlaterCore		= indexTable [7]
-			scriptObject.LoadConditions	= indexTable [8]
+			scriptObject.Name		= indexTable ["1"]
+			scriptObject.Icon			= indexTable ["2"]
+			scriptObject.Desc		= indexTable ["3"]
+			scriptObject.Author		= indexTable ["4"]
+			scriptObject.Time			= indexTable ["5"]
+			scriptObject.Revision		= indexTable ["6"]
+			scriptObject.PlaterCore		= indexTable ["7"]
+			scriptObject.LoadConditions	= indexTable ["8"]
 
 			scriptObject.Hooks = {}
 			scriptObject.HooksTemp = {}
 			scriptObject.LastHookEdited = ""
 			
-			for hookName, hookCode in pairs (indexTable [9]) do
+			for hookName, hookCode in pairs (indexTable ["9"]) do
 				scriptObject.Hooks [hookName] = hookCode
 			end
 
@@ -10910,21 +10952,21 @@ end
 			local scriptObject = {}
 			
 			scriptObject.Enabled 		= true --imported scripts are always enabled
-			scriptObject.ScriptType 	= indexTable [1]
-			scriptObject.Name  		= indexTable [2]
-			scriptObject.SpellIds  		= indexTable [3]
-			scriptObject.NpcNames  	= indexTable [4]
-			scriptObject.Icon  		= indexTable [5]
-			scriptObject.Desc  		= indexTable [6]
-			scriptObject.Author  		= indexTable [7]
-			scriptObject.Time  		= indexTable [8]
-			scriptObject.Revision  		= indexTable [9]
-			scriptObject.PlaterCore  	= indexTable [10]
+			scriptObject.ScriptType 	= indexTable ["1"]
+			scriptObject.Name  		= indexTable ["2"]
+			scriptObject.SpellIds  		= indexTable ["3"]
+			scriptObject.NpcNames  	= indexTable ["4"]
+			scriptObject.Icon  		= indexTable ["5"]
+			scriptObject.Desc  		= indexTable ["6"]
+			scriptObject.Author  		= indexTable ["7"]
+			scriptObject.Time  		= indexTable ["8"]
+			scriptObject.Revision  		= indexTable ["9"]
+			scriptObject.PlaterCore  	= indexTable ["10"]
 			scriptObject.Url  		= indexTable.url or ""
 			
 			for i = 1, #Plater.CodeTypeNames do
 				local memberName = Plater.CodeTypeNames [i]
-				scriptObject [memberName] = indexTable [10 + i]
+				scriptObject [memberName] = indexTable [(10 + i)..""]
 			end
 			
 			return scriptObject
@@ -10990,6 +11032,56 @@ end
 				local memberName = Plater.CodeTypeNames [i]
 				t [#t + 1] = scriptObject [memberName]
 			end
+			
+			return t
+		end
+	end
+	
+	function Plater.PrepareTableToExportStringIndexes (scriptObject)
+	--function Plater.PrepareTableToExport (scriptObject)
+		
+		if (scriptObject.Hooks) then
+			--script for hooks
+			local t = {}
+			
+			t ["1"] = scriptObject.Name
+			t ["2"] = scriptObject.Icon
+			t ["3"] = scriptObject.Desc
+			t ["4"] = scriptObject.Author
+			t ["5"] = scriptObject.Time
+			t ["6"] = scriptObject.Revision
+			t ["7"] = scriptObject.PlaterCore
+			t ["8"] = scriptObject.LoadConditions
+			t ["9"] = {}
+
+			for hookName, hookCode in pairs (scriptObject.Hooks) do
+				t ["9"] [hookName] = hookCode
+			end
+			
+			t ["type"] = "hook"
+			
+			return t
+		else
+			--regular script for aura cast or unitID
+			local t = {}
+			
+			t ["1"] = scriptObject.ScriptType
+			t ["2"] = scriptObject.Name
+			t ["3"] = scriptObject.SpellIds
+			t ["4"] = scriptObject.NpcNames
+			t ["5"] = scriptObject.Icon
+			t ["6"] = scriptObject.Desc
+			t ["7"] = scriptObject.Author
+			t ["8"] = scriptObject.Time
+			t ["9"] = scriptObject.Revision
+			t ["10"] = scriptObject.PlaterCore
+			
+			for i = 1, #Plater.CodeTypeNames do
+				local memberName = Plater.CodeTypeNames [i]
+				t [(10 + i)..""] = scriptObject [memberName]
+			end
+			
+			t ["type"] = "script"
 			
 			return t
 		end
