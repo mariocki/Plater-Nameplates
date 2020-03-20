@@ -2214,10 +2214,6 @@ Plater.DefaultSpellRangeList = {
 		--~created ~events ~oncreated 
 		NAME_PLATE_CREATED = function (event, plateFrame)
 
-			if (plateFrame and plateFrame.UnitFrame) then
-				--ViragDevTool_AddData("++ " .. ( plateFrame.UnitFrame:GetName() or "??"), "Mariocki")
-			end
-
 			--> create the unitframe
 				local unitFrameOptions = {
 					ShowPowerBar = false, 
@@ -2720,12 +2716,8 @@ Plater.DefaultSpellRangeList = {
 --			if (select (2, UnitClass (unitBarId)) == "HUNTER") then
 --				print ("nameplate added", UnitName (unitBarId))
 --			end
-
-			ViragDevTool_AddData(format("------- %s (%s)", unitBarId, UnitName(unitBarId)), "Mariocki")
-
 			local plateFrame = C_NamePlate.GetNamePlateForUnit (unitBarId)
 			if (not plateFrame) then
-				ViragDevTool_AddData(format("------- %s (%s) no plateFrame not found", unitBarId, UnitName(unitBarId)), "Mariocki")
 				return
 			end
 			
@@ -3105,11 +3097,10 @@ Plater.DefaultSpellRangeList = {
 		local currentTime = time()
 
 		local mapID = C_Map.GetBestMapForUnit("player"); 
-		ViragDevTool_AddData(format("------- ZONE %s (%d)", C_Map.GetMapInfo(mapID).name, mapID), "Mariocki")
+		ViragDevTool_AddData(format("<<<<<<< ZONE %s (%d) >>>>>>>>", C_Map.GetMapInfo(mapID).name, mapID), "Mariocki")
 
 		if (mapID == Plater.LastMapId and not forceUpdate) then
 			if ((currentTime - Plater.LastNpcScan) < 5) then
-				--print("- ".. #(Plater.NpcsWithQuests))
 				ViragDevTool_AddData("------- skipping npc scan", "Mariocki")
 				return
 			end
@@ -3118,9 +3109,6 @@ Plater.DefaultSpellRangeList = {
 		Plater.LastMapId = mapID
 
 		if (not Grail) then	return end
-
-		--if (not Grail.IsPrimed()) then return end
-
 
 		Grail:_AddWorldQuests()
 
@@ -3187,10 +3175,11 @@ Plater.DefaultSpellRangeList = {
 							ViragDevTool_AddData("Unkown NPC (" .. v2 .. "/" .. npcId .. ") for questId: " .. questId .. " with status: " .. Grail:StatusCode(questId), "Mariocki")
 						else
 							local npcName = Grail:NPCName(v2) or "??"
-							--ViragDevTool_AddData((npcName or "??") .. " (" .. v2 .. "/" .. npcId .. ")" .. " " .. action .. " " .. questId .. " " .. Grail:StatusCode(questId), "Mariocki")
 							if (Grail:IsNPCAvailable(v2) and not tContains(npcMasterList, npcName) and npcName ~= "??" and npcName ~= "Self") then
 								tinsert(npcMasterList, npcName)	
-								ViragDevTool_AddData("adding " .. npcName .. " to list of NPC's with a quest.", "Mariocki")
+								ViragDevTool_AddData("adding " .. (npcName or "??") .. " to list of NPC's with a quest.", "Mariocki")
+							else
+								ViragDevTool_AddData((npcName or "??") .. " (" .. v2 .. "/" .. npcId .. ")" .. " Does not have any quests.", "Mariocki")
 							end
 						end
 					end
@@ -6588,12 +6577,13 @@ end
 
 			--there's two ways of showing this for friendly npcs (selected from the options panel): show all names or only npcs with profession names
 			--enemy npcs always show all
+			ViragDevTool_AddData("plateConfigs.all_names: " .. tostring(plateConfigs.all_names), "Mariocki")
 			if (plateConfigs.all_names) then
 				plateFrame.ActorNameSpecial:Show()
 				plateFrame.CurrentUnitNameString = plateFrame.ActorNameSpecial
 				Plater.UpdateUnitName (plateFrame)
 				
-				--if this is an enemy or neutral npc
+				--if this is an enemy npc
 				if (plateFrame [MEMBER_REACTION] <= 4) then
 				
 					local r, g, b, a
@@ -6701,10 +6691,10 @@ end
 					DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.5)
 					plateFrame.ActorNameSpecial:SetTextColor(0.29, 0.6, 1, 1)
 				
-					ViragDevTool_AddData(plateFrame.ActorNameSpecial:GetText() .. " is quest giver (specific names).", "Mariocki")
+					ViragDevTool_AddData((plateFrame.ActorNameSpecial:GetText() or "??") .. " is quest giver (specific names).", "Mariocki")
 				else
 					if (Plater.IsQuestObjective (plateFrame)) then
-						ViragDevTool_AddData(plateFrame.ActorNameSpecial:GetText() .. " is quest objective (specific names).", "Mariocki")
+						ViragDevTool_AddData((plateFrame.ActorNameSpecial:GetText() or "??") .. " is quest objective (specific names).", "Mariocki")
 					else
 						ViragDevTool_AddData((plateFrame.ActorNameSpecial:GetText() or "??") .. " is neither quest giver or objective (specific names).", "Mariocki")
 					end
@@ -6727,7 +6717,7 @@ end
 					--npc name
 					plateFrame.ActorNameSpecial:Show()
 				else
-					--ViragDevTool_AddData(plateFrame.ActorNameSpecial:GetText() .. " is not quest objective or giver or has subtitle (specific names) - hiding.", "Mariocki")
+					ViragDevTool_AddData((plateFrame.ActorNameSpecial:GetText() or "??") .. " is not quest objective or giver or has subtitle (specific names) - hiding.", "Mariocki")
 					plateFrame.ActorTitleSpecial:Hide()
 					plateFrame.ActorNameSpecial:Hide()
 				end
