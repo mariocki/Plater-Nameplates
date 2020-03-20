@@ -2938,6 +2938,7 @@ Plater.DefaultSpellRangeList = {
 							plateFrame.PlateConfig = DB_PLATE_CONFIG.friendlynpc
 							Plater.UpdatePlateFrame (plateFrame, ACTORTYPE_FRIENDLY_NPC, nil, true)
 							actorType = ACTORTYPE_FRIENDLY_NPC
+							unitFrame.Settings.ShowCastBar = not DB_CASTBAR_HIDE_FRIENDLY
 							if (DB_CASTBAR_HIDE_FRIENDLY) then
 								CastingBarFrame_SetUnit (castBar, nil, nil, nil)
 							end
@@ -2955,6 +2956,7 @@ Plater.DefaultSpellRangeList = {
 							plateFrame.PlateConfig = DB_PLATE_CONFIG.enemynpc
 							Plater.UpdatePlateFrame (plateFrame, ACTORTYPE_ENEMY_NPC, nil, true)
 							actorType = ACTORTYPE_ENEMY_NPC
+							unitFrame.Settings.ShowCastBar = not DB_CASTBAR_HIDE_ENEMIES
 							if (DB_CASTBAR_HIDE_ENEMIES) then
 								CastingBarFrame_SetUnit (castBar, nil, nil, nil)
 							end
@@ -10934,7 +10936,9 @@ end
 				scriptObject.Hooks [hookName] = hookCode
 			end
 
-			scriptObject.Url  		= indexTable.url or ""
+			scriptObject.url         = indexTable.url or ""
+			scriptObject.version = indexTable.version or -1
+			scriptObject.semver  = indexTable.semver or ""
 			
 			return scriptObject
 			
@@ -10952,7 +10956,9 @@ end
 			scriptObject.Time  		= indexTable ["8"]
 			scriptObject.Revision  		= indexTable ["9"]
 			scriptObject.PlaterCore  	= indexTable ["10"]
-			scriptObject.Url  		= indexTable.url or ""
+			scriptObject.url  	 = indexTable.url or ""
+			scriptObject.version = indexTable.version or -1
+			scriptObject.semver  = indexTable.semver or ""
 			
 			for i = 1, #Plater.CodeTypeNames do
 				local memberName = Plater.CodeTypeNames [i]
@@ -11048,6 +11054,8 @@ end
 				t ["9"] [hookName] = hookCode
 			end
 			
+			t["options"] = scriptObject.Options or {}
+			
 			t ["type"] = "hook"
 			
 			return t
@@ -11070,6 +11078,8 @@ end
 				local memberName = Plater.CodeTypeNames [i]
 				t [(10 + i)..""] = scriptObject [memberName]
 			end
+			
+			t["options"] = scriptObject.Options or {}
 			
 			t ["type"] = "script"
 			
