@@ -3138,7 +3138,8 @@ Plater.DefaultSpellRangeList = {
 						ViragDevTool_AddData("Quest Id: " .. v .. ", status: " .. Grail:StatusCode(v) .. " WQ and not available, ignoring.", "Mariocki")
 					end
 				else
-					ViragDevTool_AddData("Quest Id: " .. v .. " is a WQ not returned by API, ignoring.", "Mariocki")
+					ViragDevTool_AddData("Quest Id: " .. v .. " is a WQ not returned by API, adding anyway.", "Mariocki")
+					tinsert(allQuestsInMapAvailableToday, v)					
 				end
 			else
 				if (Grail:CanAcceptQuest(v, false, false, true, false, false, false) or bit.band(Grail:StatusCode(v), Grail.bitMaskInLog) > 0) then
@@ -3179,7 +3180,7 @@ Plater.DefaultSpellRangeList = {
 							local npcName = Grail:NPCName(v2) or "??"
 							if (Grail:IsNPCAvailable(v2) and not tContains(npcMasterList, npcName) and npcName ~= "??" and npcName ~= "Self") then
 								tinsert(npcMasterList, npcName)	
-								ViragDevTool_AddData("adding " .. (npcName or "??") .. " to list of NPC's with a quest.", "Mariocki")
+								ViragDevTool_AddData("Adding " .. (npcName or "??") .. " (" .. v2 .. "/" .. npcId .. ")" .. " to list of NPC's with a quest.", "Mariocki")
 							else
 								ViragDevTool_AddData((npcName or "??") .. " (" .. v2 .. "/" .. npcId .. ")" .. " Does not have any quests.", "Mariocki")
 							end
@@ -6579,7 +6580,7 @@ end
 
 			--there's two ways of showing this for friendly npcs (selected from the options panel): show all names or only npcs with profession names
 			--enemy npcs always show all
-			ViragDevTool_AddData("plateConfigs.all_names: " .. tostring(plateConfigs.all_names), "Mariocki")
+			--ViragDevTool_AddData("plateConfigs.all_names: " .. tostring(plateConfigs.all_names), "Mariocki")
 			if (plateConfigs.all_names) then
 				plateFrame.ActorNameSpecial:Show()
 				plateFrame.CurrentUnitNameString = plateFrame.ActorNameSpecial
@@ -6614,10 +6615,10 @@ end
 					if (plateFrame[QUEST_GIVER]) then
 						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.2)						
 						plateFrame.ActorNameSpecial:SetTextColor(0.29, 0.6, 1, 1)
-						ViragDevTool_AddData(plateFrame.ActorNameSpecial:GetText() .. " is enemy/neutral NPC quest giver (all names).", "Mariocki")
+						ViragDevTool_AddData(plateFrame.ActorNameSpecial:GetText() .. " is enemy/neutral NPC quest giver (all names).", "Mariocki-PF")
 					else
 						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size)
-						ViragDevTool_AddData(plateFrame.ActorNameSpecial:GetText() .. " is enemy/neutral NPC (all names).", "Mariocki")
+						ViragDevTool_AddData(plateFrame.ActorNameSpecial:GetText() .. " is enemy/neutral NPC (all names).", "Mariocki-PF")
 					end					
 					DF:SetFontFace (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_font)
 					
@@ -6647,10 +6648,10 @@ end
 					if (plateFrame[QUEST_GIVER]) then
 						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.5)
 						plateFrame.ActorNameSpecial:SetTextColor(0.29, 0.6, 1, 1)
-						ViragDevTool_AddData(plateFrame.ActorNameSpecial:GetText() .. " is friendly NPC quest giver (all names).", "Mariocki")
+						ViragDevTool_AddData(plateFrame.ActorNameSpecial:GetText() .. " is friendly NPC quest giver (all names).", "Mariocki-PF")
 					else
 						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size)
-						ViragDevTool_AddData(plateFrame.ActorNameSpecial:GetText() .. " is friendly NPC (all names).", "Mariocki")
+						ViragDevTool_AddData(plateFrame.ActorNameSpecial:GetText() .. " is friendly NPC (all names).", "Mariocki-PF")
 					end
 					DF:SetFontFace (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_font)
 					
@@ -6693,12 +6694,12 @@ end
 					DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.5)
 					plateFrame.ActorNameSpecial:SetTextColor(0.29, 0.6, 1, 1)
 				
-					ViragDevTool_AddData((plateFrame.ActorNameSpecial:GetText() or "??") .. " is quest giver (specific names).", "Mariocki")
+					ViragDevTool_AddData((plateFrame.ActorNameSpecial:GetText() or "??") .. " is quest giver (specific names).", "Mariocki-PF")
 				else
 					if (Plater.IsQuestObjective (plateFrame)) then
-						ViragDevTool_AddData((plateFrame.ActorNameSpecial:GetText() or "??") .. " is quest objective (specific names).", "Mariocki")
+						ViragDevTool_AddData((plateFrame.ActorNameSpecial:GetText() or "??") .. " is quest objective (specific names).", "Mariocki-PF")
 					else
-						ViragDevTool_AddData((plateFrame.ActorNameSpecial:GetText() or "??") .. " is neither quest giver or objective (specific names).", "Mariocki")
+						ViragDevTool_AddData((plateFrame.ActorNameSpecial:GetText() or "??") .. " is neither quest giver or objective (specific names).", "Mariocki-PF")
 					end
 				end
 
@@ -6719,7 +6720,7 @@ end
 					--npc name
 					plateFrame.ActorNameSpecial:Show()
 				else
-					ViragDevTool_AddData((plateFrame.ActorNameSpecial:GetText() or "??") .. " is not quest objective or giver or has subtitle (specific names) - hiding.", "Mariocki")
+					ViragDevTool_AddData((plateFrame.ActorNameSpecial:GetText() or "??") .. " is not quest objective or giver or has subtitle (specific names) - hiding.", "Mariocki-PF")
 					plateFrame.ActorTitleSpecial:Hide()
 					plateFrame.ActorNameSpecial:Hide()
 				end
