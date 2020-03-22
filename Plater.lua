@@ -2155,6 +2155,7 @@ Plater.DefaultSpellRangeList = {
 			Plater.RunFunctionForEvent ("ZONE_CHANGED_NEW_AREA")
 
 			--ARP
+			table.wipe(Plater.NpcsWithQuests)
 			C_Timer.After (1, Plater.UpdateQuestNPCIds, false)
 		end,
 		
@@ -3096,7 +3097,10 @@ Plater.DefaultSpellRangeList = {
 	-- ARP
 	function Plater.IsQuestGiver(plateFrame)
 		if (not plateFrame or not plateFrame [MEMBER_NPCID]) then return end
+		local _grail = Grail
 
+		if (not _grail or not _grail.versionNumber) then return end
+		
 		local grailNPCName = Grail:NPCName(plateFrame [MEMBER_NPCID])
 
 		--print(plateFrame [MEMBER_NPCID] .. " converted to " .. grailNPCName)
@@ -3112,7 +3116,7 @@ Plater.DefaultSpellRangeList = {
 		local mapID = C_Map.GetBestMapForUnit("player"); 
 		Plater._LogToVDT(format("<<<<<<< ZONE %s (%d) >>>>>>>>", C_Map.GetMapInfo(mapID).name, mapID), "Mariocki")
 
-		if (mapID == Plater.LastMapId and not forceUpdate) then
+		if (mapID == Plater.LastMapId and not forceUpdate and Plater.NpcsWithQuests ~= {}) then
 			if ((currentTime - Plater.LastNpcScan) < 5) then
 				Plater._LogToVDT("------- skipping npc scan", "Mariocki")
 				return
@@ -3121,7 +3125,9 @@ Plater.DefaultSpellRangeList = {
 		Plater.LastNpcScan = currentTime
 		Plater.LastMapId = mapID
 
-		if (not Grail) then	return end
+		local _grail = Grail
+
+		if (not _grail or not _grail.versionNumber) then return end
 
 		Grail:_AddWorldQuests()
 
