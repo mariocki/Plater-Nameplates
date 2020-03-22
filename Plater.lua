@@ -3100,13 +3100,13 @@ Plater.DefaultSpellRangeList = {
 		local _grail = Grail
 
 		if (not _grail or not _grail.versionNumber) then return end
-		
+
 		local grailNPCName = Grail:NPCName(plateFrame [MEMBER_NPCID])
 
-		--print(plateFrame [MEMBER_NPCID] .. " converted to " .. grailNPCName)
+		--Plater._LogToVDT(plateFrame [MEMBER_NPCID] .. " converted to " .. grailNPCName)
 		plateFrame[QUEST_GIVER] = tContains(Plater.NpcsWithQuests, grailNPCName)
 
-		--print("checking if " .. grailNPCName .. " is a quest giver: " .. tostring(plateFrame [QUEST_GIVER]))
+		--Plater._LogToVDT("checking if " .. grailNPCName .. " is a quest giver: " .. tostring(plateFrame [QUEST_GIVER]))
 	end
 
 	-- ARP
