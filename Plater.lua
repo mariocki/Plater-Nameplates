@@ -814,6 +814,13 @@ Plater.DefaultSpellRangeList = {
 		Plater.ActorTypeSettingsCache.RefreshID = PLATER_REFRESH_ID
 	end
 	
+	function Plater._LogToVDT(logMessage, tag)
+		if (ViragDevTool_AddData) then
+			ViragDevTool_AddData(logMessage, tag)
+		end
+	end
+	
+
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --> character specific abilities and spells ~spells
 
@@ -3099,11 +3106,11 @@ Plater.DefaultSpellRangeList = {
 		local currentTime = time()
 
 		local mapID = C_Map.GetBestMapForUnit("player"); 
-		ViragDevTool_AddData(format("<<<<<<< ZONE %s (%d) >>>>>>>>", C_Map.GetMapInfo(mapID).name, mapID), "Mariocki")
+		Plater._LogToVDT(format("<<<<<<< ZONE %s (%d) >>>>>>>>", C_Map.GetMapInfo(mapID).name, mapID), "Mariocki")
 
 		if (mapID == Plater.LastMapId and not forceUpdate) then
 			if ((currentTime - Plater.LastNpcScan) < 5) then
-				ViragDevTool_AddData("------- skipping npc scan", "Mariocki")
+				Plater._LogToVDT("------- skipping npc scan", "Mariocki")
 				return
 			end
 		end
@@ -3118,27 +3125,29 @@ Plater.DefaultSpellRangeList = {
 
 		if (not allQuestIdsInMap) then return end
 
-		ViragDevTool_AddData("------- GETTING DAILIES FROM API", "Mariocki")
+		table.sort(allQuestIdsInMap)
+		
+		Plater._LogToVDT("------- GETTING DAILIES FROM API", "Mariocki")
 		local xx = C_TaskQuest.GetQuestsForPlayerByMapID(C_Map.GetBestMapForUnit("player"))
 		local dailyAndWQ = {}
 		for _, x in pairs(xx) do
 			tinsert(dailyAndWQ, x.questId)
-			ViragDevTool_AddData("Quest Id: " .. x.questId .. " Daily: " .. tostring(x.isDaily), "Mariocki")
+			Plater._LogToVDT("Quest Id: " .. x.questId .. " Daily: " .. tostring(x.isDaily), "Mariocki")
 		end
 
-		ViragDevTool_AddData("------- FILTERING QUESTS", "Mariocki")
+		Plater._LogToVDT("------- FILTERING QUESTS", "Mariocki")
 		local allQuestsInMapAvailableToday = {}
 		for k, v in pairs(allQuestIdsInMap) do
 			if (Grail:IsWorldQuest(v)) then
 				if (tContains(dailyAndWQ, v)) then
 					if ((Grail:IsAvailable(v) and Grail:CanAcceptQuest(v, false, false, true, false, false, false)) or bit.band(Grail:StatusCode(v), Grail.bitMaskInLog) > 0) then -- and not Grail:IsQuestCompleted(v) ) then
-						ViragDevTool_AddData("Quest Id: " .. v .. ", status: " .. Grail:StatusCode(v) .. " WQ available.", "Mariocki")
+						Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. Grail:StatusCode(v) .. " WQ available.", "Mariocki")
 						tinsert(allQuestsInMapAvailableToday, v)
 					else
-						ViragDevTool_AddData("Quest Id: " .. v .. ", status: " .. Grail:StatusCode(v) .. " WQ and not available, ignoring.", "Mariocki")
+						Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. Grail:StatusCode(v) .. " WQ and not available, ignoring.", "Mariocki")
 					end
 				else
-					ViragDevTool_AddData("Quest Id: " .. v .. " is a WQ not returned by API, adding anyway.", "Mariocki")
+					Plater._LogToVDT("Quest Id: " .. v .. " is a WQ not returned by API, adding anyway.", "Mariocki")
 					tinsert(allQuestsInMapAvailableToday, v)					
 				end
 			else
@@ -3146,24 +3155,24 @@ Plater.DefaultSpellRangeList = {
 					if (Grail:IsDaily(v)) then
 						if (tContains(dailyAndWQ, v)) then
 							tinsert(allQuestsInMapAvailableToday, v)
-							ViragDevTool_AddData("Quest Id: " .. v .. ", status: " .. Grail:StatusCode(v) .. " Daily available.", "Mariocki")
+							Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. Grail:StatusCode(v) .. " Daily available.", "Mariocki")
 						else
-							ViragDevTool_AddData("Quest Id: " .. v .. " is a daily not returned by API, ignoring.", "Mariocki")
+							Plater._LogToVDT("Quest Id: " .. v .. " is a daily not returned by API, ignoring.", "Mariocki")
 						end
 					elseif (Grail:IsWeekly(v)) then
 						tinsert(allQuestsInMapAvailableToday, v)
-						ViragDevTool_AddData("Quest Id: " .. v .. ", status: " .. Grail:StatusCode(v) .. " Weekly available.", "Mariocki")
+						Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. Grail:StatusCode(v) .. " Weekly available.", "Mariocki")
 					else
 						tinsert(allQuestsInMapAvailableToday, v)
-						ViragDevTool_AddData("Quest Id: " .. v .. ", status: " .. Grail:StatusCode(v) .. " available.", "Mariocki")
+						Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. Grail:StatusCode(v) .. " available.", "Mariocki")
 					end
 				else
-					ViragDevTool_AddData("Quest Id: " .. v .. ", status: " .. Grail:StatusCode(v) .. " quest completed, ignoring.", "Mariocki")
+					Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. Grail:StatusCode(v) .. " quest completed, ignoring.", "Mariocki")
 				end
 			end
 		end
 
-		ViragDevTool_AddData("Number of available quests: " .. #(allQuestsInMapAvailableToday), "Mariocki")
+		Plater._LogToVDT("Number of available quests: " .. #(allQuestsInMapAvailableToday), "Mariocki")
 
 		local _iterateOverNPCs = function(incomingNpc, npcMasterList, questId, action)
 			if (not incomingNpc) then
@@ -3175,14 +3184,14 @@ Plater.DefaultSpellRangeList = {
 					local npcId = Grail:_NPCIndex(v2)
 					if (npcId) then
 						if (npcId == 0) then
-							ViragDevTool_AddData("Unkown NPC (" .. v2 .. "/" .. npcId .. ") for questId: " .. questId .. " with status: " .. Grail:StatusCode(questId), "Mariocki")
+							Plater._LogToVDT("Unkown NPC (" .. v2 .. "/" .. npcId .. ") for questId: " .. questId .. " with status: " .. Grail:StatusCode(questId), "Mariocki")
 						else
 							local npcName = Grail:NPCName(v2) or "??"
 							if (Grail:IsNPCAvailable(v2) and not tContains(npcMasterList, npcName) and npcName ~= "??" and npcName ~= "Self") then
 								tinsert(npcMasterList, npcName)	
-								ViragDevTool_AddData("Adding " .. (npcName or "??") .. " (" .. v2 .. "/" .. npcId .. ")" .. " to list of NPC's with a quest.", "Mariocki")
+								Plater._LogToVDT("Adding " .. (npcName or "??") .. " (" .. v2 .. "/" .. npcId .. ")" .. " to list of NPC's with a quest.", "Mariocki")
 							else
-								ViragDevTool_AddData((npcName or "??") .. " (" .. v2 .. "/" .. npcId .. ")" .. " Does not have any quests.", "Mariocki")
+								Plater._LogToVDT((npcName or "??") .. " (" .. v2 .. "/" .. npcId .. ")" .. " Does not have any quests.", "Mariocki")
 							end
 						end
 					end
@@ -3192,7 +3201,7 @@ Plater.DefaultSpellRangeList = {
 			return npcsWithAQuest
 		end
 
-		ViragDevTool_AddData("------- MAPPING TO NPCs", "Mariocki")
+		Plater._LogToVDT("------- MAPPING TO NPCs", "Mariocki")
 
 		local npcsWithAQuest = {}
 		for k, v in pairs(allQuestsInMapAvailableToday) do
@@ -3202,7 +3211,7 @@ Plater.DefaultSpellRangeList = {
 
 		Plater.NpcsWithQuests = npcsWithAQuest
 		
-		ViragDevTool_AddData("------- DONE ".. #(Plater.NpcsWithQuests), "Mariocki")
+		Plater._LogToVDT("------- DONE ".. #(Plater.NpcsWithQuests), "Mariocki")
 	end
 
 	function Plater.EventHandler (_, event, ...) --private
@@ -6578,9 +6587,13 @@ end
 			PixelUtil.SetPoint (plateFrame.ActorNameSpecial, "center", plateFrame, "center", 0, 10)
 			PixelUtil.SetPoint (plateFrame.ActorTitleSpecial, "top", plateFrame.ActorNameSpecial, "bottom", 0, -2)
 
+			-- ARP
+			local subTitle = Plater.GetActorSubName (plateFrame)
+			local isValidSubtitle = subTitle and subTitle ~= ""and not subTitle:match ("%d")
+
 			--there's two ways of showing this for friendly npcs (selected from the options panel): show all names or only npcs with profession names
 			--enemy npcs always show all
-			--ViragDevTool_AddData("plateConfigs.all_names: " .. tostring(plateConfigs.all_names), "Mariocki")
+			--Plater._LogToVDT("plateConfigs.all_names: " .. tostring(plateConfigs.all_names), "Mariocki")
 			if (plateConfigs.all_names) then
 				plateFrame.ActorNameSpecial:Show()
 				plateFrame.CurrentUnitNameString = plateFrame.ActorNameSpecial
@@ -6613,20 +6626,19 @@ end
 					plateFrame.ActorNameSpecial:SetTextColor (r, g, b, a)
 					-- ARP
 					if (plateFrame[QUEST_GIVER]) then
-						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.2)						
+						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.1)						
 						plateFrame.ActorNameSpecial:SetTextColor(0.29, 0.6, 1, 1)
-						ViragDevTool_AddData(plateFrame.ActorNameSpecial:GetText() .. " is enemy/neutral NPC quest giver (all names).", "Mariocki-PF")
+						Plater._LogToVDT(plateFrame.ActorNameSpecial:GetText() .. " is enemy/neutral NPC quest giver (all names).", "Mariocki-PF")
 					else
 						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size)
-						ViragDevTool_AddData(plateFrame.ActorNameSpecial:GetText() .. " is enemy/neutral NPC (all names).", "Mariocki-PF")
+						Plater._LogToVDT(plateFrame.ActorNameSpecial:GetText() .. " is enemy/neutral NPC (all names).", "Mariocki-PF")
 					end					
 					DF:SetFontFace (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_font)
 					
 					Plater.SetFontOutlineAndShadow (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_outline, plateConfigs.big_actorname_text_shadow_color, plateConfigs.big_actorname_text_shadow_color_offset[1], plateConfigs.big_actorname_text_shadow_color_offset[2])
 					
 					--npc title
-					local subTitle = Plater.GetActorSubName (plateFrame)
-					if (subTitle and subTitle ~= "" and not subTitle:match ("%d")) then
+					if (isValidSubtitle) then
 						plateFrame.ActorTitleSpecial:Show()
 						subTitle = DF:RemoveRealmName (subTitle)
 						plateFrame.ActorTitleSpecial:SetText ("<" .. subTitle .. ">")
@@ -6646,20 +6658,19 @@ end
 					plateFrame.ActorNameSpecial:SetTextColor (unpack (plateConfigs.big_actorname_text_color))
 					-- ARP
 					if (plateFrame[QUEST_GIVER]) then
-						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.5)
+						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.1)
 						plateFrame.ActorNameSpecial:SetTextColor(0.29, 0.6, 1, 1)
-						ViragDevTool_AddData(plateFrame.ActorNameSpecial:GetText() .. " is friendly NPC quest giver (all names).", "Mariocki-PF")
+						Plater._LogToVDT(plateFrame.ActorNameSpecial:GetText() .. " is friendly NPC quest giver (all names).", "Mariocki-PF")
 					else
 						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size)
-						ViragDevTool_AddData(plateFrame.ActorNameSpecial:GetText() .. " is friendly NPC (all names).", "Mariocki-PF")
+						Plater._LogToVDT(plateFrame.ActorNameSpecial:GetText() .. " is friendly NPC (all names).", "Mariocki-PF")
 					end
 					DF:SetFontFace (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_font)
 					
 					Plater.SetFontOutlineAndShadow (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_outline, plateConfigs.big_actorname_text_shadow_color, plateConfigs.big_actorname_text_shadow_color_offset[1], plateConfigs.big_actorname_text_shadow_color_offset[2])
 					
 					--profession (title)
-					local subTitle = Plater.GetActorSubName (plateFrame)
-					if (subTitle and subTitle ~= "" and not subTitle:match ("%d")) then
+					if (isValidSubtitle) then
 						plateFrame.ActorTitleSpecial:Show()
 						subTitle = DF:RemoveRealmName (subTitle)
 						plateFrame.ActorTitleSpecial:SetText ("<" .. subTitle .. ">")
@@ -6678,11 +6689,7 @@ end
 						plateFrame.ActorTitleSpecial:Hide()
 					end
 				end
-			else				
-				-- ARP
-				local subTitle = Plater.GetActorSubName (plateFrame)
-				local isValidSubtitle = subTitle and subTitle ~= ""and not subTitle:match ("%d")
-
+			else
 				plateFrame.ActorNameSpecial:Show()
 				plateFrame.ActorNameSpecial:SetTextColor (unpack (plateConfigs.big_actorname_text_color))
 				DF:SetFontFace (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_font)
@@ -6691,20 +6698,20 @@ end
 				
 				-- ARP
 				if (plateFrame[QUEST_GIVER]) then
-					DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.5)
+					DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.1)
 					plateFrame.ActorNameSpecial:SetTextColor(0.29, 0.6, 1, 1)
 				
-					ViragDevTool_AddData((plateFrame.ActorNameSpecial:GetText() or "??") .. " is quest giver (specific names).", "Mariocki-PF")
+					Plater._LogToVDT((plateFrame.ActorNameSpecial:GetText() or "??") .. " is quest giver (specific names).", "Mariocki-PF")
 				else
 					if (Plater.IsQuestObjective (plateFrame)) then
-						ViragDevTool_AddData((plateFrame.ActorNameSpecial:GetText() or "??") .. " is quest objective (specific names).", "Mariocki-PF")
+						Plater._LogToVDT((plateFrame.ActorNameSpecial:GetText() or "??") .. " is quest objective (specific names).", "Mariocki-PF")
 					else
-						ViragDevTool_AddData((plateFrame.ActorNameSpecial:GetText() or "??") .. " is neither quest giver or objective (specific names).", "Mariocki-PF")
+						Plater._LogToVDT((plateFrame.ActorNameSpecial:GetText() or "??") .. " is neither quest giver or objective (specific names).", "Mariocki-PF")
 					end
 				end
 
 				--scan tooltip to check if there's an title for this npc
-				if (isValidSubtitle or plateFrame[QUEST_GIVER] or Plater.IsQuestObjective (plateFrame)) then --isn't level
+				if (isValidSubtitle) then --isn't level 
 					plateFrame.ActorTitleSpecial:Show()
 					subTitle = DF:RemoveRealmName (subTitle)
 					plateFrame.ActorTitleSpecial:SetText ("<" .. subTitle .. ">")
@@ -6719,8 +6726,10 @@ end
 					
 					--npc name
 					plateFrame.ActorNameSpecial:Show()
+				elseif (plateFrame[QUEST_GIVER] or Plater.IsQuestObjective(plateFrame)) then
+					plateFrame.ActorNameSpecial:Show()
 				else
-					ViragDevTool_AddData((plateFrame.ActorNameSpecial:GetText() or "??") .. " is not quest objective or giver or has subtitle (specific names) - hiding.", "Mariocki-PF")
+					Plater._LogToVDT((plateFrame.ActorNameSpecial:GetText() or "??") .. " is not quest objective or giver or has subtitle (specific names) - hiding.", "Mariocki-PF")
 					plateFrame.ActorTitleSpecial:Hide()
 					plateFrame.ActorNameSpecial:Hide()
 				end
