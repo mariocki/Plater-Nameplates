@@ -3114,6 +3114,10 @@ Plater.DefaultSpellRangeList = {
 		local currentTime = time()
 
 		local mapID = C_Map.GetBestMapForUnit("player"); 
+		if (not mapID) then
+			Plater._LogToVDT("<<<<<<< unable to find map >>>>>>>>", "Mariocki")
+			return
+		end
 		Plater._LogToVDT(format("<<<<<<< ZONE %s (%d) >>>>>>>>", C_Map.GetMapInfo(mapID).name, mapID), "Mariocki")
 
 		if (mapID == Plater.LastMapId and not forceUpdate and Plater.NpcsWithQuests ~= {}) then
@@ -6658,7 +6662,11 @@ end
 						DF:SetFontSize (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_size)
 						DF:SetFontFace (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_font)
 
-						Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_outline, plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
+						if (plateFrame[MEMBER_REACTION] == UNITREACTION_NEUTRAL or plateFrame[QUEST_GIVER]) then
+							Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, "NONE", plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
+						else
+							Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_outline, plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
+						end
 					else
 						plateFrame.ActorTitleSpecial:Hide()
 					end
