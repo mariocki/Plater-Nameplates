@@ -1617,6 +1617,26 @@ Plater.DefaultSpellRangeList = {
 			end
 		end
 		
+		--build the offensive cd list
+		if (profile.extra_icon_show_offensive) then
+			for spellId, _ in pairs (DF.CooldownsAttack) do
+				local spellName = GetSpellInfo (spellId)
+				if (spellName) then
+					SPECIAL_AURAS_AUTO_ADDED [spellName] = true
+				end
+			end
+		end
+		
+		--build the defensive cd list
+		if (profile.extra_icon_show_defensive) then
+			for spellId, _ in pairs (DF.CooldownsAllDeffensive) do
+				local spellName = GetSpellInfo (spellId)
+				if (spellName) then
+					SPECIAL_AURAS_AUTO_ADDED [spellName] = true
+				end
+			end
+		end
+		
 		--> add auras added by the player into the special aura container
 		for index, spellId in ipairs (profile.extra_icon_auras) do
 			local spellName = GetSpellInfo (spellId)
@@ -1719,6 +1739,39 @@ Plater.DefaultSpellRangeList = {
 				if (spellName) then
 					AUTO_TRACKING_EXTRA_DEBUFFS [spellName] = true
 					CAN_TRACK_EXTRA_DEBUFFS = true
+				end
+			end
+			
+			if (Plater.db.profile.aura_show_crowdcontrol and DF.CrowdControlSpells) then
+				for spellId, _ in pairs (DF.CrowdControlSpells) do
+					local spellName = GetSpellInfo (spellId)
+					if (spellName) then
+						AUTO_TRACKING_EXTRA_BUFFS [spellName] = true
+						--AUTO_TRACKING_EXTRA_BUFFS [spellId] = true
+						CAN_TRACK_EXTRA_BUFFS = true
+					end
+				end
+			end
+			
+			if (Plater.db.profile.aura_show_offensive_cd and DF.CooldownsAttack) then
+				for spellId, _ in pairs (DF.CooldownsAttack) do
+					local spellName = GetSpellInfo (spellId)
+					if (spellName) then
+						AUTO_TRACKING_EXTRA_BUFFS [spellName] = true
+						--AUTO_TRACKING_EXTRA_BUFFS [spellId] = true
+						CAN_TRACK_EXTRA_BUFFS = true
+					end
+				end
+			end
+			
+			if (Plater.db.profile.aura_show_defensive_cd and DF.CooldownsAllDeffensive) then
+				for spellId, _ in pairs (DF.CooldownsAllDeffensive) do
+					local spellName = GetSpellInfo (spellId)
+					if (spellName) then
+						AUTO_TRACKING_EXTRA_BUFFS [spellName] = true
+						--AUTO_TRACKING_EXTRA_BUFFS [spellId] = true
+						CAN_TRACK_EXTRA_BUFFS = true
+					end
 				end
 			end
 
@@ -2272,7 +2325,7 @@ Plater.DefaultSpellRangeList = {
 					
 					newUnitFrame.IsUIParent = true --expose to scripts the unitFrame is a UIParent child
 				else
-					newUnitFrame = DF:CreateUnitFrame (plateFrame, plateFrame:GetName() .. "PlaterUnitFrame", unitFrameOptions, healthBarOptions, castBarOptions)
+					newUnitFrame = DF:CreateUnitFrame (plateFrame, plateFrame:GetName() .. "PlaterUnitFrame", unitFrameOptions, healthBarOptions, castBarOptions, powerBarOptions)
 				end
 
 				plateFrame.unitFrame = newUnitFrame
@@ -2705,6 +2758,12 @@ Plater.DefaultSpellRangeList = {
 				plateFrame.unitFrame.aggroGlowLower:SetBlendMode ("ADD")
 				plateFrame.unitFrame.aggroGlowLower:SetHeight (4)
 				plateFrame.unitFrame.aggroGlowLower:Hide()
+				
+			--> widget container
+				plateFrame.unitFrame.WidgetContainer = CreateFrame("frame", nil, plateFrame.unitFrame, "UIWidgetContainerTemplate")
+				Plater.SetAnchor (plateFrame.unitFrame.WidgetContainer, Plater.db.profile.widget_bar_anchor, plateFrame.unitFrame)
+				plateFrame.unitFrame.WidgetContainer:SetScale(Plater.db.profile.widget_bar_scale)
+				plateFrame.unitFrame.WidgetContainer:UnregisterForWidgetSet()
 			
 			--> name plate created hook
 				if (HOOK_NAMEPLATE_CREATED.ScriptAmount > 0) then
@@ -2992,6 +3051,16 @@ Plater.DefaultSpellRangeList = {
 			--esconde os glow de aggro
 			unitFrame.aggroGlowUpper:Hide()
 			unitFrame.aggroGlowLower:Hide()
+			
+			--widget container update
+			Plater.SetAnchor (unitFrame.WidgetContainer, Plater.db.profile.widget_bar_anchor, unitFrame)
+			plateFrame.unitFrame.WidgetContainer:SetScale(Plater.db.profile.widget_bar_scale)
+			unitFrame.WidgetContainer:UnregisterForWidgetSet()
+			local widgetSetId = UnitWidgetSet(unitID)
+		    if widgetSetId then
+				unitFrame.WidgetContainer:RegisterForWidgetSet(widgetSetId)
+				unitFrame.WidgetContainer:ProcessAllWidgets()
+			end
 			
 			--can check aggro
 			unitFrame.CanCheckAggro = unitFrame.displayedUnit == unitID and actorType == ACTORTYPE_ENEMY_NPC
@@ -4326,18 +4395,18 @@ end
 		
 		for i = 1, amountFramesShown do
 			local iconFrame = iconFrameContainer [i]
-			local spellId = iconFrame.spellId
+			local texture = iconFrame.texture
 			
-			if (aurasDuplicated [spellId]) then
-				tinsert (aurasDuplicated [spellId], {iconFrame, iconFrame.RemainingTime})
+			if (aurasDuplicated [texture]) then
+				tinsert (aurasDuplicated [texture], {iconFrame, iconFrame.RemainingTime})
 			else
-				aurasDuplicated [spellId] = {
+				aurasDuplicated [texture] = {
 					{iconFrame, iconFrame.RemainingTime}
 				}
 			end
 		end
 
-		for spellId, iconFramesTable in pairs (aurasDuplicated) do
+		for texture, iconFramesTable in pairs (aurasDuplicated) do
 			--how many auras with the same name the unit has
 			local amountOfSimilarAuras = #iconFramesTable
 			
@@ -4703,6 +4772,7 @@ end
 			
 			--> update members
 			auraIconFrame.spellId = spellId
+			auraIconFrame.texture = texture
 			auraIconFrame.layoutIndex = auraIconFrame.ID
 			auraIconFrame.IsShowingBuff = false
 			auraIconFrame.CanStealOrPurge = false
@@ -4827,6 +4897,18 @@ end
 		elseif (actualAuraType == AURA_TYPE_ENRAGE) then 
 			--> enrage effects
 			auraIconFrame:SetBackdropBorderColor (unpack (profile.aura_border_colors.enrage))
+		
+		elseif (DF.CrowdControlSpells and DF.CrowdControlSpells [spellId]) then 
+			--> CC effects
+			auraIconFrame:SetBackdropBorderColor (unpack (profile.aura_border_colors.crowdcontrol))
+		
+		elseif (DF.CooldownsAttack and DF.CooldownsAttack [spellId]) then 
+			--> offensive CDs
+			auraIconFrame:SetBackdropBorderColor (unpack (profile.aura_border_colors.offensive))
+		
+		elseif (DF.CooldownsAllDeffensive and DF.CooldownsAllDeffensive [spellId]) then 
+			--> defensive CDs
+			auraIconFrame:SetBackdropBorderColor (unpack (profile.aura_border_colors.defensive))
 		
 		elseif (isShowAll) then
 			auraIconFrame:SetBackdropBorderColor (unpack (profile.aura_border_colors.is_show_all))
@@ -4971,6 +5053,14 @@ end
 		elseif (debuffType == AURA_TYPE_ENRAGE) then 
 			--> enrage effects
 			borderColor = Plater.db.profile.extra_icon_show_enrage_border
+		
+		elseif (DF.CooldownsAllDeffensive and DF.CooldownsAllDeffensive[spellName]) then 
+			--> defensive effects
+			borderColor = Plater.db.profile.extra_icon_show_defensive_border
+		
+		elseif (DF.CooldownsAttack and DF.CooldownsAttack[spellName]) then 
+			--> offensive effects
+			borderColor = Plater.db.profile.extra_icon_show_offensive_border
 		
 		else
 			borderColor = Plater.db.profile.extra_icon_border_color
@@ -6264,6 +6354,8 @@ end
 		else
 			plateFrame.FocusIndicator:Hide()
 		end
+		
+		plateFrame.unitFrame.WidgetContainer:UnregisterForWidgetSet()
 
 		if (UnitIsUnit (plateFrame.unitFrame [MEMBER_UNITID], "target")) then
 			plateFrame [MEMBER_TARGET] = true
@@ -6301,6 +6393,12 @@ end
 			end
 			
 			Plater.UpdateResourceFrame()
+			
+			local widgetSetId = UnitWidgetSet(plateFrame.unitFrame [MEMBER_UNITID])
+		    if widgetSetId then
+				plateFrame.unitFrame.WidgetContainer:RegisterForWidgetSet(widgetSetId)
+				plateFrame.unitFrame.WidgetContainer:ProcessAllWidgets()
+			end
 			
 		else
 			plateFrame.TargetNeonUp:Hide()
@@ -7344,6 +7442,9 @@ end
 			if (unitFrame.healthBar.unit) then
 				unitFrame.healthBar:UNIT_HEALTH()
 			end
+			
+			Plater.SetAnchor (unitFrame.WidgetContainer, profile.widget_bar_anchor, unitFrame)
+			plateFrame.unitFrame.WidgetContainer:SetScale(Plater.db.profile.widget_bar_scale)
 		end
 		
 		-- ARP
@@ -8427,6 +8528,7 @@ end
 		tooltipFrame:SetHyperlink ("unit:" .. (serial or ""))
 		
 		local isPlayerPet = false
+		local isOtherPet = false
 		
 		local line1 = _G ["PlaterPetOwnerFinderTextLeft2"]
 		local text1 = line1 and line1:GetText()
@@ -8435,10 +8537,12 @@ end
 			local playerName = pName:gsub ("%-.*", "") --remove realm name
 			if (text1:find (playerName)) then
 				isPlayerPet = true
+			elseif (string.match(text1, string.gsub(UNITNAME_TITLE_PET, "%%s", "(%.*)")) or string.match(text1, string.gsub(UNITNAME_TITLE_MINION, "%%s", "(%.*)"))) then
+				isOtherPet = true
 			end
 		end
 		
-		if (not isPlayerPet) then
+		if (not isPlayerPet and not isOtherPet) then
 			local line2 = _G ["PlaterPetOwnerFinderTextLeft3"]
 			local text2 = line2 and line2:GetText()
 			if (text2 and text2 ~= "") then
@@ -8446,15 +8550,19 @@ end
 				local playerName = pName:gsub ("%-.*", "") --remove realm name
 				if (text2:find (playerName)) then
 					isPlayerPet = true
+				elseif (text2.match(string.gsub(UNITNAME_TITLE_PET, "%%s", "(%%a+)")) or string.match(text2, string.gsub(UNITNAME_TITLE_MINION, "%%s", "(%.*)"))) then
+					isOtherPet = true
 				end
 			end
 		end
 		
-		if (not isPlayerPet) then
-			Plater.NpcBlackList [serial] = true
-		else
+		if (isPlayerPet) then
 			PET_CACHE [serial] = time()
 			Plater.PlayerPetCache [serial] = time()
+		elseif (isOtherPet) then
+			PET_CACHE [serial] = time()
+		else
+			Plater.NpcBlackList [serial] = true
 		end
 	end
 	
@@ -10687,11 +10795,15 @@ end
 			return "hook"
 		elseif indexScriptTable.type == "script" then
 			return "script"
+		elseif indexScriptTable.type == "npc_colors" then
+			return "npc_colors"
 		end
 	
 		-- fallback for old versions
 		indexScriptTable = Plater.MigrateScriptModImport (indexScriptTable) -- just to make sure this works as intended...
-		if (type (indexScriptTable ["9"]) == "table") then --hook
+		if (indexScriptTable.NpcColor) then
+			return "npc_colors"
+		elseif (type (indexScriptTable ["9"]) == "table") then --hook
 			return "hook"
 		elseif (type (indexScriptTable ["9"]) == "number") then --script
 			return "script"
@@ -10892,6 +11004,8 @@ end
 				--check if the user in importing a profile in the scripting tab
 				if (indexScriptTable.plate_config) then
 					DF:ShowErrorMessage ("Invalid Script or Mod.\n\nImport profiles at the Profiles tab.")
+				elseif (indexScriptTable.NpcColor) then
+					DF:ShowErrorMessage ("Invalid Script or Mod.\n\nImport NpcColors at the Npc Colors tab.")
 				end
 				errortext = "Cannot import: data imported is invalid"
 			end
