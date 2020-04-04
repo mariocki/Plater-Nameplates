@@ -6740,7 +6740,7 @@ end
 					plateFrame.ActorNameSpecial:SetTextColor (r, g, b, a)
 					-- ARP
 					if (plateFrame[QUEST_GIVER]) then
-						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.1)						
+						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.2)						
 						plateFrame.ActorNameSpecial:SetTextColor(0.29, 0.6, 1, 1)
 						Plater._LogToVDT(plateFrame.ActorNameSpecial:GetText() .. " is enemy/neutral NPC quest giver (all names).", "Mariocki-PF")
 					else
@@ -6776,7 +6776,7 @@ end
 					plateFrame.ActorNameSpecial:SetTextColor (unpack (plateConfigs.big_actorname_text_color))
 					-- ARP
 					if (plateFrame[QUEST_GIVER]) then
-						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.1)
+						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.2)
 						plateFrame.ActorNameSpecial:SetTextColor(0.29, 0.6, 1, 1)
 						Plater._LogToVDT(plateFrame.ActorNameSpecial:GetText() .. " is friendly NPC quest giver (all names).", "Mariocki-PF")
 					else
@@ -6816,7 +6816,7 @@ end
 				
 				-- ARP
 				if (plateFrame[QUEST_GIVER]) then
-					DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.1)
+					DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.2)
 					plateFrame.ActorNameSpecial:SetTextColor(0.29, 0.6, 1, 1)
 				
 					Plater._LogToVDT((plateFrame.ActorNameSpecial:GetText() or "??") .. " is quest giver (specific names).", "Mariocki-PF")
