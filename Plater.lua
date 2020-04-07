@@ -3182,7 +3182,10 @@ Plater.DefaultSpellRangeList = {
 
 	-- ARP
 	function Plater.UpdateQuestNPCIds(forceUpdate)
-		local currentTime = time()
+		if (UnitOnTaxi("player")) then
+			Plater._LogToVDT("------- on taxi, skipping npc scan", "Mariocki")
+			return
+		end			
 
 		local mapID = C_Map.GetBestMapForUnit("player"); 
 		if (not mapID) then
@@ -3190,6 +3193,7 @@ Plater.DefaultSpellRangeList = {
 			return
 		end
 		Plater._LogToVDT(format("<<<<<<< ZONE %s (%d) >>>>>>>>", C_Map.GetMapInfo(mapID).name, mapID), "Mariocki")
+		local currentTime = time()
 
 		if (mapID == Plater.LastMapId and not forceUpdate and Plater.NpcsWithQuests ~= {}) then
 			if ((currentTime - Plater.LastNpcScan) < 5) then
