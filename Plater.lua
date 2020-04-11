@@ -3232,10 +3232,10 @@ Plater.DefaultSpellRangeList = {
 			if (Grail:IsWorldQuest(v)) then
 				if (tContains(dailyAndWQ, v)) then
 					if ((Grail:IsAvailable(v) and Grail:CanAcceptQuest(v, false, false, true, false, false, false)) or bit.band(Grail:StatusCode(v), Grail.bitMaskInLog) > 0) then -- and not Grail:IsQuestCompleted(v) ) then
-						Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. Grail:StatusCode(v) .. " WQ available.", "Mariocki")
+						Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. string.format("%x", Grail:StatusCode(v)) .. " WQ available.", "Mariocki")
 						tinsert(allQuestsInMapAvailableToday, v)
 					else
-						Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. Grail:StatusCode(v) .. " WQ and not available, ignoring.", "Mariocki")
+						Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. string.format("%x", Grail:StatusCode(v)) .. " WQ and not available, ignoring.", "Mariocki")
 					end
 				else
 					Plater._LogToVDT("Quest Id: " .. v .. " is a WQ not returned by API, adding anyway.", "Mariocki")
@@ -3246,19 +3246,25 @@ Plater.DefaultSpellRangeList = {
 					if (Grail:IsDaily(v)) then
 						if (tContains(dailyAndWQ, v)) then
 							tinsert(allQuestsInMapAvailableToday, v)
-							Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. Grail:StatusCode(v) .. " Daily available.", "Mariocki")
+							Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. string.format("%x", Grail:StatusCode(v)) .. " Daily available.", "Mariocki")
 						else
 							Plater._LogToVDT("Quest Id: " .. v .. " is a daily not returned by API, ignoring.", "Mariocki")
 						end
 					elseif (Grail:IsWeekly(v)) then
 						tinsert(allQuestsInMapAvailableToday, v)
-						Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. Grail:StatusCode(v) .. " Weekly available.", "Mariocki")
+						Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. string.format("%x", Grail:StatusCode(v)) .. " Weekly available.", "Mariocki")
 					else
 						tinsert(allQuestsInMapAvailableToday, v)
-						Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. Grail:StatusCode(v) .. " available.", "Mariocki")
+						Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. string.format("%x", Grail:StatusCode(v)) .. " available.", "Mariocki")
 					end
 				else
-					Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. Grail:StatusCode(v) .. " quest completed, ignoring.", "Mariocki")
+					if (Grail:IsDaily(v)) then
+						Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. string.format("%x", Grail:StatusCode(v)) .. " daily quest completed, ignoring.", "Mariocki")
+					elseif (Grail:IsWeekly(v)) then
+						Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. string.format("%x", Grail:StatusCode(v)) .. " weekly quest completed, ignoring.", "Mariocki")
+					else
+						Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. string.format("%x", Grail:StatusCode(v)) .. " quest completed, ignoring.", "Mariocki")
+					end
 				end
 			end
 		end
