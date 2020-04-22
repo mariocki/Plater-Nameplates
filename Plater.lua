@@ -916,9 +916,30 @@ Plater.DefaultSpellRangeList = {
 
 		--value when the unit is in range
 		local inRangeAlpha = Plater.db.profile.range_check_in_range_or_target_alpha
+		local unitFrame = plateFrame.unitFrame
 
 		--if is using the no combat alpha and the unit isn't in combat, ignore the range check, no combat alpha is disabled by default
 		if (plateFrame [MEMBER_NOCOMBAT]) then
+			--unitFrame:SetAlpha (Plater.db.profile.not_affecting_combat_alpha) -- already set if necessary
+			unitFrame.healthBar:SetAlpha (1)
+			unitFrame.castBar:SetAlpha (1)
+			unitFrame.powerBar:SetAlpha (1)
+			unitFrame.BuffFrame:SetAlpha (1)
+			unitFrame.BuffFrame2:SetAlpha (1)
+			
+			return
+		
+		--the unit is friendly or not using range check and non targets alpha
+		elseif (plateFrame [MEMBER_REACTION] >= 5 or (not DB_USE_RANGE_CHECK and not DB_USE_NON_TARGETS_ALPHA)) then
+			unitFrame:SetAlpha (1)
+			unitFrame.healthBar:SetAlpha (1)
+			unitFrame.castBar:SetAlpha (1)
+			unitFrame.powerBar:SetAlpha (1)
+			unitFrame.BuffFrame:SetAlpha (1)
+			unitFrame.BuffFrame2:SetAlpha (1)
+			
+			plateFrame [MEMBER_RANGE] = true
+			unitFrame [MEMBER_RANGE] = true
 			return
 		end
 
@@ -935,7 +956,6 @@ Plater.DefaultSpellRangeList = {
 		local buffFrames_rangeCheckAlpha = Plater.db.profile.range_check_buffs_alpha
 		local powerBar_rangeCheckAlpha = Plater.db.profile.range_check_power_bar_alpha
 
-		local unitFrame = plateFrame.unitFrame
 		local healthBar = unitFrame.healthBar
 		local castBar = unitFrame.castBar
 		local powerBar = unitFrame.powerBar
@@ -6100,7 +6120,7 @@ end
 	function Plater.UpdateNameplateThread (self) --self = unitFrame
 
 		--make sure there's a unitID in the unit frame
-		if (not self.displayedUnit) then
+		if (not self.displayedUnit or not self.CanCheckAggro) then
 			return
 		end
 		
@@ -6802,7 +6822,7 @@ end
 					--profession (title)
 					if (isValidSubtitle) then
 						plateFrame.ActorTitleSpecial:Show()
-						subTitle = DF:RemoveRealmName (subTitle)
+						--subTitle = DF:RemoveRealmName (subTitle)
 						plateFrame.ActorTitleSpecial:SetText ("<" .. subTitle .. ">")
 						plateFrame.ActorTitleSpecial:ClearAllPoints()
 						PixelUtil.SetPoint (plateFrame.ActorTitleSpecial, "top", plateFrame.ActorNameSpecial, "bottom", 0, -2)
@@ -8567,7 +8587,7 @@ end
 				local playerName = pName:gsub ("%-.*", "") --remove realm name
 				if (text2:find (playerName)) then
 					isPlayerPet = true
-				elseif (text2.match(string.gsub(UNITNAME_TITLE_PET, "%%s", "(%%a+)")) or string.match(text2, string.gsub(UNITNAME_TITLE_MINION, "%%s", "(%.*)"))) then
+				elseif (string.match(text2, string.gsub(UNITNAME_TITLE_PET, "%%s", "(%.*)")) or string.match(text2, string.gsub(UNITNAME_TITLE_MINION, "%%s", "(%.*)"))) then
 					isOtherPet = true
 				end
 			end
@@ -9535,12 +9555,10 @@ end
 					local unitReaction = unitFrame.PlateFrame [MEMBER_REACTION]
 					if (unitReaction == 4 and not UnitAffectingCombat (unitFrame.unit)) then
 						Plater.FindAndSetNameplateColor (unitFrame, true)
+					elseif (DB_AGGRO_CHANGE_HEALTHBAR_COLOR and unitFrame.CanCheckAggro and unitReaction <= 4) then
+						Plater.UpdateNameplateThread (unitFrame)
 					else
-						if (unitReaction <= 4 and DB_AGGRO_CHANGE_HEALTHBAR_COLOR) then
-							Plater.UpdateNameplateThread (unitFrame)
-						else
-							Plater.FindAndSetNameplateColor (unitFrame)
-						end
+						Plater.FindAndSetNameplateColor (unitFrame)
 					end
 				else
 					Plater.FindAndSetNameplateColor (unitFrame)
