@@ -917,12 +917,15 @@ Plater.DefaultSpellRangeList = {
 		--value when the unit is in range
 		local inRangeAlpha = Plater.db.profile.range_check_in_range_or_target_alpha
 		local unitFrame = plateFrame.unitFrame
+		local castBarFade = unitFrame.castBar.fadeOutAnimation:IsPlaying() --and Plater.db.profile.cast_statusbar_use_fade_effects
 
 		--if is using the no combat alpha and the unit isn't in combat, ignore the range check, no combat alpha is disabled by default
 		if (plateFrame [MEMBER_NOCOMBAT]) then
 			--unitFrame:SetAlpha (Plater.db.profile.not_affecting_combat_alpha) -- already set if necessary
 			unitFrame.healthBar:SetAlpha (1)
-			unitFrame.castBar:SetAlpha (1)
+			if not castBarFade then
+				unitFrame.castBar:SetAlpha (1)
+			end
 			unitFrame.powerBar:SetAlpha (1)
 			unitFrame.BuffFrame:SetAlpha (1)
 			unitFrame.BuffFrame2:SetAlpha (1)
@@ -933,7 +936,9 @@ Plater.DefaultSpellRangeList = {
 		elseif (plateFrame [MEMBER_REACTION] >= 5 or (not DB_USE_RANGE_CHECK and not DB_USE_NON_TARGETS_ALPHA)) then
 			unitFrame:SetAlpha (1)
 			unitFrame.healthBar:SetAlpha (1)
-			unitFrame.castBar:SetAlpha (1)
+			if not castBarFade then
+				unitFrame.castBar:SetAlpha (1)
+			end
 			unitFrame.powerBar:SetAlpha (1)
 			unitFrame.BuffFrame:SetAlpha (1)
 			unitFrame.BuffFrame2:SetAlpha (1)
@@ -2269,6 +2274,10 @@ Plater.DefaultSpellRangeList = {
 				if (not InCombatLockdown()) then
 					SetCVar ("nameplateResourceOnTarget", CVAR_DISABLED) -- reset this to false always, as it conflicts
 				end
+			end
+			
+			if Plater.db.profile.plate_config.friendlynpc.quest_enabled and not InCombatLockdown() then
+				SetCVar("showQuestTrackingTooltips", 1) -- ensure it is turned on...
 			end
 
 			--create the frame to hold the plater resoruce bar
@@ -5770,6 +5779,10 @@ end
 			
 			buffFrame2:ClearAllPoints()
 			PixelUtil.SetPoint (buffFrame2, "bottom", unitFrame, "top", Plater.db.profile.aura2_x_offset,  plateConfigs.buff_frame_y_offset + Plater.db.profile.aura2_y_offset)
+			
+		if Plater.db.profile.show_health_prediction or Plater.db.profile.show_shield_prediction then
+			healthBar:UpdateHealPrediction() -- ensure health prediction is updated properly
+		end
 	end
 	
 	--debug function to print the size of the anchor for each aura container
