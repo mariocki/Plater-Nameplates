@@ -80,7 +80,7 @@ local Plater = DF:CreateAddOn ("Plater", "PlaterDB", PLATER_DEFAULT_SETTINGS, { 
 	}
 })
 Plater.versionString = GetAddOnMetadata("Plater", "Version") or GetAddOnMetadata("Plater_dev", "Version")
-Plater.fullVersionInfo = Plater.versionString .. " - DetailsFramework v" .. select(2,LibStub:GetLibrary("DetailsFramework-1.0"))
+Plater.fullVersionInfo = (Plater.versionString or "") .. " - DetailsFramework v" .. select(2,LibStub:GetLibrary("DetailsFramework-1.0"))
 function Plater.GetVersionInfo(printOut)
 	-- update, just in case...
 	Plater.versionString = GetAddOnMetadata("Plater", "Version") or GetAddOnMetadata("Plater_dev", "Version")
