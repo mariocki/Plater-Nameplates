@@ -4,6 +4,7 @@
 ## SavedVariables: PlaterDB
 ## SavedVariablesPerCharacter: PlaterDBChr
 ## OptionalDeps: Grail
+## Version: @project-version@
 
 #@no-lib-strip@
 libs\libs.xml

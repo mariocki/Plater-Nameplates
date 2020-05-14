@@ -79,6 +79,15 @@ local Plater = DF:CreateAddOn ("Plater", "PlaterDB", PLATER_DEFAULT_SETTINGS, { 
 		
 	}
 })
+Plater.versionString = GetAddOnMetadata("Plater", "Version") or GetAddOnMetadata("Plater_dev", "Version")
+Plater.fullVersionInfo = Plater.versionString .. " - DetailsFramework v" .. select(2,LibStub:GetLibrary("DetailsFramework-1.0"))
+function Plater.GetVersionInfo(printOut)
+	-- update, just in case...
+	Plater.versionString = GetAddOnMetadata("Plater", "Version") or GetAddOnMetadata("Plater_dev", "Version")
+	Plater.fullVersionInfo = Plater.versionString .. " - DetailsFramework v" .. select(2,LibStub:GetLibrary("DetailsFramework-1.0"))
+	if printOut then print("Plater version info:\n" .. Plater.fullVersionInfo) end
+	return Plater.fullVersionInfo
+end
 
 --> when a hook script is compiled, it increases the build version, so the handler for running scripts will notice in the change and update the script in real time
 local PLATER_HOOK_BUILD = 1
@@ -2259,11 +2268,6 @@ Plater.DefaultSpellRangeList = {
 			local name, instanceType, difficultyID, difficultyName, maxPlayers, dynamicDifficulty, isDynamic, instanceMapID, instanceGroupSize = GetInstanceInfo()
 			Plater.ZoneInstanceType = instanceType
 			
-			--run hooks on load screen
-			if (HOOK_LOAD_SCREEN.ScriptAmount > 0) then
-				Plater.PlayerEnteringWorld = true
-			end
-			
 			--> ensure resource on target consistency after login:
 			local resourcesOnTarget = GetCVar ("nameplateResourceOnTarget") == CVAR_ENABLED
 			if resourcesOnTarget then
@@ -2282,6 +2286,11 @@ Plater.DefaultSpellRangeList = {
 
 			--ARP
 			C_Timer.After (1, Plater.UpdateQuestNPCIds, true)
+			
+			--run hooks on load screen
+			if (HOOK_LOAD_SCREEN.ScriptAmount > 0) then
+				Plater.PlayerEnteringWorld = true
+			end
 		end,
 
 		PLAYER_LOGOUT = function()
@@ -3087,7 +3096,7 @@ Plater.DefaultSpellRangeList = {
 			plateFrame.unitFrame.WidgetContainer:SetScale(Plater.db.profile.widget_bar_scale)
 			unitFrame.WidgetContainer:UnregisterForWidgetSet()
 			local widgetSetId = UnitWidgetSet(unitID)
-		    if widgetSetId then
+		    if widgetSetId and UnitPlayerControlled(unitID) and not UnitIsOwnerOrControllerOfUnit('player', unitID) then
 				unitFrame.WidgetContainer:RegisterForWidgetSet(widgetSetId)
 				unitFrame.WidgetContainer:ProcessAllWidgets()
 			end
@@ -5772,7 +5781,7 @@ end
 			buffFrame2:ClearAllPoints()
 			PixelUtil.SetPoint (buffFrame2, "bottom", unitFrame, "top", Plater.db.profile.aura2_x_offset,  plateConfigs.buff_frame_y_offset + Plater.db.profile.aura2_y_offset)
 			
-		if Plater.db.profile.show_health_prediction or Plater.db.profile.show_shield_prediction then
+		if (Plater.db.profile.show_health_prediction or Plater.db.profile.show_shield_prediction) and healthBar.displayedUnit then
 			healthBar:UpdateHealPrediction() -- ensure health prediction is updated properly
 		end
 	end
@@ -6434,7 +6443,7 @@ end
 			Plater.UpdateResourceFrame()
 			
 			local widgetSetId = UnitWidgetSet(plateFrame.unitFrame [MEMBER_UNITID])
-		    if widgetSetId then
+		    if widgetSetId and UnitPlayerControlled(unitID) and not UnitIsOwnerOrControllerOfUnit('player', unitID) then
 				plateFrame.unitFrame.WidgetContainer:RegisterForWidgetSet(widgetSetId)
 				plateFrame.unitFrame.WidgetContainer:ProcessAllWidgets()
 			end
