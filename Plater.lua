@@ -67,6 +67,7 @@ local lower = string.lower
 local floor = floor
 local max = math.max
 local min = math.min
+--local guildName, _, _ = GetGuildInfo("player")
 
 local LibSharedMedia = LibStub:GetLibrary ("LibSharedMedia-3.0")
 local LCG = LibStub:GetLibrary("LibCustomGlow-1.0")
@@ -79,6 +80,9 @@ local Plater = DF:CreateAddOn ("Plater", "PlaterDB", PLATER_DEFAULT_SETTINGS, { 
 		
 	}
 })
+
+Plater.playerGuild = select(1, GetGuildInfo("player")) or ""
+
 Plater.versionString = GetAddOnMetadata("Plater", "Version") or GetAddOnMetadata("Plater_dev", "Version")
 Plater.fullVersionInfo = (Plater.versionString or "") .. " - DetailsFramework v" .. select(2,LibStub:GetLibrary("DetailsFramework-1.0"))
 function Plater.GetVersionInfo(printOut)
@@ -115,7 +119,7 @@ Plater.CanOverride_Functions = {
 	RefreshDBUpvalues = true, --refresh cache
 	RefreshDBLists = true, --refresh cache
 	UpdateAuraCache = true, --refresh cache
-	
+
 	CreateShowAuraIconAnimation = true, --creates the animation for aura icons played when they are shown
 	GetHealthCutoffValue = true, --check if the character has a execute range and enable or disable the health cut off indicators
 	CheckRange = true, --check if the player is in range of the unit
@@ -139,11 +143,11 @@ Plater.CanOverride_Functions = {
 	UpdateAuras_Manual = true, --start an aura refresh for manual aura tracking
 	UpdateAuras_Automatic = true, --start an aura refresh for automatic aura tracking
 	UpdateAuras_Self_Automatic = true, --start an aura refresh on the personal bar nameplate
-	
+
 	ColorOverrider = true, --control which color que nameplate will have when the Override Default Colors are enabled
 	FindAndSetNameplateColor = true, --Plater tries to find a color for the nameplate
 	SetTextColorByClass = true, --adds the class color into a text with scape sequence
-	
+
 	UpdatePlateSize = true, --control the size of health, cast, power bars
 	SetPlateBackground = true, --set the backdrop when showing the nameplate area
 	UpdateNameplateThread = true, --change the nameplate color based on threat
@@ -165,7 +169,7 @@ Plater.CanOverride_Functions = {
 	EnableHighlight = true, --enable the highlight check
 	DisableHighlight = true, --disable the highlight check
 	GetUnitType = true, --return if an unit is a pet, minor or regular
-	
+
 	AnimateLeftWithAccel = true, --move the health bar to left when health animation is enabled
 	AnimateRightWithAccel = true, --move the health bar to right when health animation is enabled
 	IsQuestObjective = true, --check if the npc from the nameplate is a quest mob
@@ -191,9 +195,6 @@ Plater.CanOverride_Members = {
 	SpellForRangeCheck = true, --spell name used for range check
 	PlayerGUID = true, --store the GUID of the player
 	PlayerClass = true, --store the name for the player (non localized)
-	
-	
-	
 }
 
 --> types of codes for each script in the Scripting tab (do not change these inside scripts)
@@ -6680,7 +6681,15 @@ end
 			local nameFontString = plateFrame.ActorNameSpecial
 			-- ARP Hide players
 			if (UnitIsPlayer(plateFrame.unitFrame.unit)) then
-				nameFontString:Hide()
+				if (plateFrame.playerGuildName) then
+					if (plateFrame.playerGuildName == Plater.playerGuild) then
+						nameFontString:Show()
+					else
+						nameFontString:Hide()
+					end
+				else
+					nameFontString:Hide()
+				end
 			else
 				nameFontString:Show()
 			end
