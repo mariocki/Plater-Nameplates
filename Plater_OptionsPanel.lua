@@ -460,7 +460,7 @@ function Plater.OpenOptionsPanel()
 			
 			--importing a profile in the profiles tab
 			--this is called when the user pressess the okay button to confirm the profile import
-			function profilesFrame.ConfirmImportProfile()
+			function profilesFrame.ConfirmImportProfile(isWagoUpdate)
 				if (profilesFrame.IsExporting) then
 					profilesFrame.HideStringField()
 					return
@@ -508,18 +508,21 @@ function Plater.OpenOptionsPanel()
 					
 					if profileExists then
 						--DF:ShowPromptPanel ("Warning!\nA Plater profile with the name \"" .. profileName.. "\" already exists. Are you sure you want to overwrite it?\nIf not: please specify a new name for the profile.\nOverwriting an existing profile cannot be undone!", function() profilesFrame.DoProfileImport(profileName, profile) end, function() end, true, 500)
-						DF:ShowPromptPanel (format (L["OPTIONS_PROFILE_IMPORT_OVERWRITE"], profileName), function() profilesFrame.DoProfileImport(profileName, profile, true) end, function() end, true, 500)
+						DF:ShowPromptPanel (format (L["OPTIONS_PROFILE_IMPORT_OVERWRITE"], profileName), function() profilesFrame.DoProfileImport(profileName, profile, true, isWagoUpdate) end, function() end, true, 500)
 					else
-						profilesFrame.DoProfileImport(profileName, profile, false)
+						profilesFrame.DoProfileImport(profileName, profile, false, false)
 					end
 					
 				end
 			end
 			
-			function profilesFrame.DoProfileImport(profileName, profile, isUpdate)
+			function profilesFrame.DoProfileImport(profileName, profile, isUpdate, keepModsNotInUpdate)
 				profilesFrame.HideStringField()
 				
 				local wasUsingUIParent = Plater.db.profile.use_ui_parent
+				
+				local script_data_backup = (isUpdate or keepModsNotInUpdate) and DF.table.copy ({}, Plater.db.profile.script_data) or {}
+				local hook_data_backup = (isUpdate or keepModsNotInUpdate) and DF.table.copy ({}, Plater.db.profile.hook_data) or {}
 				
 				-- switch to profile
 				Plater.db:SetProfile (profileName)
@@ -540,6 +543,45 @@ function Plater.OpenOptionsPanel()
 					end
 				else
 					Plater.db.profile.ui_parent_scale_tune = 0
+				end
+				
+				if isUpdate or keepModsNotInUpdate then
+					-- copy user settings for mods/scripts and keep mods/scripts which are not part of the profile
+					for index, oldScriptObject in ipairs(script_data_backup) do
+						local scriptDB = Plater.db.profile.script_data or {}
+						local found = false
+						for i = 1, #scriptDB do
+							local scriptObject = scriptDB [i]
+							if (scriptObject.Name == oldScriptObject.Name) then
+								if isUpdate then
+									Plater.UpdateOptionsForModScriptImport(scriptObject, oldScriptObject)
+								end
+								found = true
+								break
+							end
+						end
+						if not found and keepModsNotInUpdate then
+							tinsert (scriptDB, oldScriptObject)
+						end
+					end
+					
+					for index, oldScriptObject in ipairs(hook_data_backup) do
+						local scriptDB = Plater.db.profile.hook_data or {}
+						local found = false
+						for i = 1, #scriptDB do
+							local scriptObject = scriptDB [i]
+							if (scriptObject.Name == oldScriptObject.Name) then
+								if isUpdate then
+									Plater.UpdateOptionsForModScriptImport(scriptObject, oldScriptObject)
+								end
+								found = true
+								break
+							end
+						end
+						if not found and keepModsNotInUpdate then
+							tinsert (scriptDB, oldScriptObject)
+						end
+					end
 				end
 				
 				--automatically reload the user UI
@@ -569,7 +611,7 @@ function Plater.OpenOptionsPanel()
 					profilesFrame.NewProfileTextEntry:SetText(Plater.db:GetCurrentProfile())
 					profilesFrame.ImportStringField:SetText(update.encoded)
 					
-					profilesFrame.ConfirmImportProfile()
+					profilesFrame.ConfirmImportProfile(true)
 				end
 			end
 			
@@ -769,7 +811,7 @@ function Plater.OpenOptionsPanel()
 			DF:ReskinSlider (importStringField.scroll)
 			
 			--import button
-			local okayButton = DF:CreateButton (importStringField, profilesFrame.ConfirmImportProfile, buttons_size[1], buttons_size[2], L["OPTIONS_OKAY"], -1, nil, nil, nil, nil, nil, DF:GetTemplate ("button", "OPTIONS_BUTTON_TEMPLATE"), DF:GetTemplate ("font", "PLATER_BUTTON"))
+			local okayButton = DF:CreateButton (importStringField, function() profilesFrame.ConfirmImportProfile(false) end, buttons_size[1], buttons_size[2], L["OPTIONS_OKAY"], -1, nil, nil, nil, nil, nil, DF:GetTemplate ("button", "OPTIONS_BUTTON_TEMPLATE"), DF:GetTemplate ("font", "PLATER_BUTTON"))
 			okayButton:SetIcon ([[Interface\BUTTONS\UI-Panel-BiggerButton-Up]], 20, 20, "overlay", {0.1, .9, 0.1, .9})
 			
 			--cancel button
@@ -4227,6 +4269,9 @@ Plater.CreateAuraTesting()
 			if (not spellID) then
 				return
 			end
+			
+			-- ensure proper name (case sensitive)
+			text = GetSpellInfo (spellID)
 			
 			return text
 		end		
