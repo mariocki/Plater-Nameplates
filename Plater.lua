@@ -83,11 +83,11 @@ local Plater = DF:CreateAddOn ("Plater", "PlaterDB", PLATER_DEFAULT_SETTINGS, { 
 
 Plater.playerGuild = select(1, GetGuildInfo("player")) or ""
 
-Plater.versionString = GetAddOnMetadata("Plater", "Version") or GetAddOnMetadata("Plater_dev", "Version")
-Plater.fullVersionInfo = (Plater.versionString or "") .. " - DetailsFramework v" .. select(2,LibStub:GetLibrary("DetailsFramework-1.0"))
+Plater.versionString = GetAddOnMetadata("Plater_dev", "Version") or GetAddOnMetadata("Plater", "Version")
+Plater.fullVersionInfo = Plater.versionString .. " - DetailsFramework v" .. select(2,LibStub:GetLibrary("DetailsFramework-1.0"))
 function Plater.GetVersionInfo(printOut)
 	-- update, just in case...
-	Plater.versionString = GetAddOnMetadata("Plater", "Version") or GetAddOnMetadata("Plater_dev", "Version")
+	Plater.versionString = GetAddOnMetadata("Plater_dev", "Version") or GetAddOnMetadata("Plater", "Version")
 	Plater.fullVersionInfo = Plater.versionString .. " - DetailsFramework v" .. select(2,LibStub:GetLibrary("DetailsFramework-1.0"))
 	if printOut then print("Plater version info:\n" .. Plater.fullVersionInfo) end
 	return Plater.fullVersionInfo
@@ -8766,15 +8766,12 @@ end
 		local cbMode = GetCVar("colorblindMode") == "1"
 		GameTooltipFrame:SetOwner (WorldFrame, "ANCHOR_NONE")
 		GameTooltipFrame:SetHyperlink ("unit:" .. (plateFrame [MEMBER_GUID] or ''))
-		--print(cbMode, GetCVar("colorblindMode"), GameTooltipFrameTextLeft3 and GameTooltipFrameTextLeft3:GetText(), PlaterScanTooltip:NumLines())
 		if cbMode then
 			local GameTooltipFrameTextLeft3 = GameTooltipFrameTextLeft3 or _G ["PlaterScanTooltipTextLeft3"]
 			return GameTooltipFrameTextLeft3 and GameTooltipFrameTextLeft3:GetText() or GameTooltipFrameTextLeft2:GetText()
 		else
 			return GameTooltipFrameTextLeft2:GetText()
 		end
-		
-		
 	end
 
 	local GameTooltipScanQuest = CreateFrame ("GameTooltip", "PlaterScanQuestTooltip", nil, "GameTooltipTemplate")
@@ -10607,7 +10604,11 @@ end
 		for i = 1, #scriptOptions do
 			local thisOption = scriptOptions[i]
 			if options_for_config_table[thisOption.Type] then
-				PLATER_GLOBAL_MOD_ENV [scriptObject.Name].config[thisOption.Key] = scriptOptionsValues[thisOption.Key] or thisOption.Value
+				if type(scriptOptionsValues[thisOption.Key]) == "boolean" then
+					PLATER_GLOBAL_MOD_ENV [scriptObject.Name].config[thisOption.Key] = scriptOptionsValues[thisOption.Key]
+				else
+					PLATER_GLOBAL_MOD_ENV [scriptObject.Name].config[thisOption.Key] = scriptOptionsValues[thisOption.Key] or thisOption.Value
+				end
 			end
 		end
 		
@@ -10699,7 +10700,11 @@ end
 		for i = 1, #scriptOptions do
 			local thisOption = scriptOptions[i]
 			if options_for_config_table[thisOption.Type] then
-				PLATER_GLOBAL_SCRIPT_ENV [scriptObject.Name].config[thisOption.Key] = scriptOptionsValues[thisOption.Key] or thisOption.Value
+				if type(scriptOptionsValues[thisOption.Key]) == "boolean" then
+					PLATER_GLOBAL_SCRIPT_ENV [scriptObject.Name].config[thisOption.Key] = scriptOptionsValues[thisOption.Key]
+				else
+					PLATER_GLOBAL_SCRIPT_ENV [scriptObject.Name].config[thisOption.Key] = scriptOptionsValues[thisOption.Key] or thisOption.Value
+				end
 			end
 		end
 
@@ -11646,7 +11651,10 @@ local cvarDiagList = {
 }
 
 function SlashCmdList.PLATER (msg, editbox)
-	if (msg == "dignostico" or msg == "diag" or msg == "debug") then
+	if (msg == "version") then
+		Plater.GetVersionInfo(true)
+		return
+	elseif (msg == "dignostico" or msg == "diag" or msg == "debug") then
 		
 		print ("Plater Diagnostic:")
 		for i = 1, #cvarDiagList do

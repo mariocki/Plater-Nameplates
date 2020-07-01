@@ -1075,7 +1075,7 @@ end
 
 		local script_options_topleft_anchor = {235, -25}
 		local script_options_scroll_size = {170, 389}
-		local script_options_scrollbox_lines = 10
+		local script_options_scrollbox_lines = 15
 		local script_options_line_height = 24
 		local script_options_background_size = {620, 453}
 		local options_frame_width = 407
@@ -1197,7 +1197,7 @@ end
 				"Toggle", --just a yes or not
 				"Label", --a text to name a section in the options
 				"Blank Line", --an empty line to separate two sections
-				"Texture", --a path for an image
+				-- not yet: "Texture", --a path for an image
 			}
 			local getListOfAvailableOptions = function()
 				local t = {}
@@ -1259,6 +1259,11 @@ end
 				end
 
 				function mainFrame.selectScriptOptionToEdit(optionIndex)
+					--hide all frames holding options for specific types of options
+					for i = 1, #mainFrame.TypeFrames do
+						mainFrame.TypeFrames[i]:Hide()
+					end
+					
 					mainFrame.optionSelected = optionIndex
 					mainFrame.ScriptOptionsScrollBox:Refresh()
 					mainFrame.SharedOptionsFrame:RefreshOptions()
@@ -1271,11 +1276,6 @@ end
 					end
 
 					mainFrame.SharedOptionsFrame:Show()
-
-					--hide all frames holding options for specific types of options
-					for i = 1, #mainFrame.TypeFrames do
-						mainFrame.TypeFrames[i]:Hide()
-					end
 
 					--show the frame for this option type
 					mainFrame.TypeFrames[optionType]:Show()
@@ -2270,6 +2270,9 @@ function Plater.CreateHookingPanel()
 		
 		--cleanup:
 		newScript.HooksTemp  = {}
+		newScript.url = nil
+		newScript.semver = nil
+		newScript.version = nil
 		
 		tinsert (Plater.db.profile.hook_data, newScript)
 		hookFrame.ScriptSelectionScrollBox:Refresh()
@@ -3511,6 +3514,11 @@ function Plater.CreateScriptingPanel()
 	function scriptingFrame.DuplicateScript (scriptId)
 		local scriptToBeCopied = scriptingFrame.GetScriptObject (scriptId)
 		local newScript = DF.table.copy ({}, scriptToBeCopied)
+		
+		--cleanup:
+		newScript.url = nil
+		newScript.semver = nil
+		newScript.version = nil
 		
 		tinsert (Plater.db.profile.script_data, newScript)
 		scriptingFrame.ScriptSelectionScrollBox:Refresh()
