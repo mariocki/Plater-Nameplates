@@ -1390,21 +1390,6 @@ local alpha_major_options = {
 	},	
 
 	{type = "blank"},
-
-	{
-		type = "toggle",
-		get = function() return Plater.db.profile.transparency_behavior_use_division end,
-		set = function (self, fixedparam, value) 
-			Plater.db.profile.transparency_behavior_use_division = value
-			Plater.UpdateAllPlates()
-		end,
-		name = "Extra Contrast",
-		desc = "When the unit is out of range and isn't your target, alpha is greatly reduced.",
-		id = "transparency_division",
-	},	
-	--Plater.db.profile.transparency_behavior_use_division
-
-	{type = "blank"},
 	{type = "label", get = function() return "Alpha Amount by Frame" end, text_template = DF:GetTemplate ("font", "ORANGE_FONT_TEMPLATE")},
 	{
 		type = "range",
@@ -1433,7 +1418,7 @@ local alpha_major_options = {
 		max = 1,
 		step = 0.1,
 		name = "Health Bar",
-		desc = "Health Bar",
+		desc = "Health Bar alpha multiplier.",
 		usedecimals = true,
 	},
 	{
@@ -1448,7 +1433,7 @@ local alpha_major_options = {
 		max = 1,
 		step = 0.1,
 		name = "Cast Bar",
-		desc = "Cast Bar",
+		desc = "Cast Bar alpha multiplier.",
 		usedecimals = true,
 	},
 	{
@@ -1463,7 +1448,7 @@ local alpha_major_options = {
 		max = 1,
 		step = 0.1,
 		name = "Power Bar",
-		desc = "Power Bar",
+		desc = "Power Bar alpha multiplier.",
 		usedecimals = true,
 	},
 	{
@@ -1478,7 +1463,7 @@ local alpha_major_options = {
 		max = 1,
 		step = 0.1,
 		name = "Buff Frames",
-		desc = "Buff Frames",
+		desc = "Buff Frames alpha multiplier.",
 		usedecimals = true,
 	},
 	{
@@ -1495,6 +1480,18 @@ local alpha_major_options = {
 		name = "In-Range/Target alpha",
 		desc = "Frame alpha for targets or in-range units.",
 		usedecimals = true,
+	},
+	
+	{
+		type = "toggle",
+		get = function() return Plater.db.profile.transparency_behavior_use_division end,
+		set = function (self, fixedparam, value) 
+			Plater.db.profile.transparency_behavior_use_division = value
+			Plater.UpdateAllPlates()
+		end,
+		name = "Extra Contrast",
+		desc = "When the unit is out of range and isn't your target, alpha is greatly reduced.",
+		id = "transparency_division",
 	},
 
 	{type = "blank"},
@@ -1804,7 +1801,7 @@ local debuff_options = {
 	},
 	
 	{type = "blank"},
-	{type = "label", get = function() return "Aura Size:" end, text_template = DF:GetTemplate ("font", "ORANGE_FONT_TEMPLATE")},
+	{type = "label", get = function() return "Aura Size (Frame 1):" end, text_template = DF:GetTemplate ("font", "ORANGE_FONT_TEMPLATE")},
 	
 	{
 		type = "range",
@@ -1837,6 +1834,40 @@ local debuff_options = {
 		desc = "Debuff's icon height.",
 	},
 	
+	{type = "blank"},
+	{type = "label", get = function() return "Aura Size (Frame 2):" end, text_template = DF:GetTemplate ("font", "ORANGE_FONT_TEMPLATE")},
+	
+	{
+		type = "range",
+		get = function() return Plater.db.profile.aura_width2 end,
+		set = function (self, fixedparam, value) 
+			Plater.db.profile.aura_width2 = value
+			Plater.RefreshDBUpvalues()
+			Plater.RefreshAuras()
+			Plater.UpdateAllPlates()
+		end,
+		min = 4,
+		max = 80,
+		step = 1,
+		name = "Width",
+		desc = "Debuff's icon width.",
+	},
+	{
+		type = "range",
+		get = function() return Plater.db.profile.aura_height2 end,
+		set = function (self, fixedparam, value) 
+			Plater.db.profile.aura_height2 = value
+			Plater.RefreshDBUpvalues()
+			Plater.RefreshAuras()
+			Plater.UpdateAllPlates()
+		end,
+		min = 4,
+		max = 80,
+		step = 1,
+		name = "Height",
+		desc = "Debuff's icon height.",
+	},
+	
 	{type = "breakline"},
 	{type = "label", get = function() return "Aura Frame 1:" end, text_template = DF:GetTemplate ("font", "ORANGE_FONT_TEMPLATE")},
 	
@@ -1849,12 +1880,19 @@ local debuff_options = {
 		desc = "To which side aura icons should grow.\n\n|cFFFFFF00Important|r: debuffs are added first, buffs after.",
 	},
 	
-	
+	{
+		type = "select",
+		get = function() return Plater.db.profile.aura_frame1_anchor.side end,
+		values = function() return build_anchor_side_table (nil, "aura_frame1_anchor") end,
+		name = L["OPTIONS_ANCHOR"],
+		desc = "Which side of the nameplate this aura frame is attached to.",
+	},
 	{
 		type = "range",
-		get = function() return Plater.db.profile.aura_x_offset end,
+		get = function() return Plater.db.profile.aura_frame1_anchor.x end,
 		set = function (self, fixedparam, value) 
-			Plater.db.profile.aura_x_offset = value
+			Plater.db.profile.aura_frame1_anchor.x = value
+			Plater.db.profile.aura_x_offset = value -- keep backwards compatibility
 			Plater.RefreshDBUpvalues()
 			Plater.UpdateAllPlates()
 		end,
@@ -1867,9 +1905,10 @@ local debuff_options = {
 	},
 	{
 		type = "range",
-		get = function() return Plater.db.profile.aura_y_offset end,
+		get = function() return Plater.db.profile.aura_frame1_anchor.y end,
 		set = function (self, fixedparam, value) 
-			Plater.db.profile.aura_y_offset = value
+			Plater.db.profile.aura_frame1_anchor.y = value
+			Plater.db.profile.aura_y_offset = value -- keep backwards compatibility
 			Plater.RefreshDBUpvalues()
 			Plater.UpdateAllPlates()
 		end,
@@ -1905,10 +1944,18 @@ local debuff_options = {
 	},
 	--> offset
 	{
+		type = "select",
+		get = function() return Plater.db.profile.aura_frame2_anchor.side end,
+		values = function() return build_anchor_side_table (nil, "aura_frame2_anchor") end,
+		name = L["OPTIONS_ANCHOR"],
+		desc = "Which side of the nameplate this aura frame is attached to.",
+	},
+	{
 		type = "range",
-		get = function() return Plater.db.profile.aura2_x_offset end,
+		get = function() return Plater.db.profile.aura_frame2_anchor.x end,
 		set = function (self, fixedparam, value) 
-			Plater.db.profile.aura2_x_offset = value
+			Plater.db.profile.aura_frame2_anchor.x = value
+			Plater.db.profile.aura2_x_offset = value -- keep backwards compatibility
 			Plater.RefreshDBUpvalues()
 			Plater.UpdateAllPlates()
 		end,
@@ -1921,9 +1968,10 @@ local debuff_options = {
 	},
 	{
 		type = "range",
-		get = function() return Plater.db.profile.aura2_y_offset end,
+		get = function() return Plater.db.profile.aura_frame2_anchor.y end,
 		set = function (self, fixedparam, value) 
-			Plater.db.profile.aura2_y_offset = value
+			Plater.db.profile.aura_frame2_anchor.y = value
+			Plater.db.profile.aura2_y_offset = value -- keep backwards compatibility
 			Plater.RefreshDBUpvalues()
 			Plater.UpdateAllPlates()
 		end,
@@ -4981,6 +5029,19 @@ do
 				end,
 				name = "Show Debuffs",
 				desc = "Show debuffs on you on the Personal Bar.",
+			},
+			
+			{
+				type = "toggle",
+				get = function() return Plater.db.profile.aura_show_all_duration_buffs_personal end,
+				set = function (self, fixedparam, value) 
+					Plater.db.profile.aura_show_all_duration_buffs_personal = value
+					Plater.RefreshDBUpvalues()
+					Plater.RefreshAuras()
+					Plater.UpdateAllPlates()
+				end,
+				name = "Don't filter Buffs by Duration",
+				desc = "Show debuffs on you on the Personal Bar regardless of duration (show no-duration and >60sec).",
 			},
 
 			{
@@ -8818,6 +8879,11 @@ local relevance_options = {
 		Plater.UpdateAllPlates()
 	end	
 	
+	local on_select_enemynpc_bigtitletext_text_font = function (_, _, value)
+		Plater.db.profile.plate_config.enemynpc.big_actortitle_text_font = value
+		Plater.UpdateAllPlates()
+	end
+	
 	--menu 2
 	local friendly_npc_options_table = {
 	
@@ -10004,6 +10070,71 @@ local relevance_options = {
 				desc = "The color of the profession text below the npc name.",
 			},
 			--]=]
+			
+			{type = "label", get = function() return "Npc Title Text When no Health Bar Shown:" end, text_template = DF:GetTemplate ("font", "ORANGE_FONT_TEMPLATE")},
+			--profession text size
+			{
+				type = "range",
+				get = function() return Plater.db.profile.plate_config.enemynpc.big_actortitle_text_size end,
+				set = function (self, fixedparam, value) 
+					Plater.db.profile.plate_config.enemynpc.big_actortitle_text_size = value
+					Plater.UpdateAllPlates()
+				end,
+				min = 6,
+				max = 99,
+				step = 1,
+				name = L["OPTIONS_SIZE"],
+				desc = "Size of the text.",
+			},
+			--profession text font
+			{
+				type = "select",
+				get = function() return Plater.db.profile.plate_config.enemynpc.big_actortitle_text_font end,
+				values = function() return DF:BuildDropDownFontList (on_select_enemynpc_bigtitletext_text_font) end,
+				name = L["OPTIONS_FONT"],
+				desc = "Font of the text.",
+			},
+			
+			--profession text outline options
+			{
+				type = "select",
+				get = function() return Plater.db.profile.plate_config.enemynpc.big_actortitle_text_outline end,
+				values = function() return build_outline_modes_table ("enemynpc", "big_actortitle_text_outline") end,
+				name = L["OPTIONS_OUTLINE"],
+				desc = "Outline",
+			},
+			
+			--profession text shadow color
+			{
+				type = "color",
+				get = function()
+					local color = Plater.db.profile.plate_config.enemynpc.big_actortitle_text_shadow_color
+					return {color[1], color[2], color[3], color[4]}
+				end,
+				set = function (self, r, g, b, a) 
+					local color = Plater.db.profile.plate_config.enemynpc.big_actortitle_text_shadow_color
+					color[1], color[2], color[3], color[4] = r, g, b, a
+					Plater.UpdateAllPlates()
+				end,
+				name = L["OPTIONS_SHADOWCOLOR"],
+				desc = "|cFFFFFF00Important|r: hide and show nameplates to see changes.",
+			},
+			
+			--[[--profession text color
+			{
+				type = "color",
+				get = function()
+					local color = Plater.db.profile.plate_config.enemynpc.big_actortitle_text_color
+					return {color[1], color[2], color[3], color[4]}
+				end,
+				set = function (self, r, g, b, a) 
+					local color = Plater.db.profile.plate_config.enemynpc.big_actortitle_text_color
+					color[1], color[2], color[3], color[4] = r, g, b, a
+					Plater.UpdateAllPlates()
+				end,
+				name = "Profession Text Color",
+				desc = "The color of the profession text below the npc name.",
+			},]]--
 			
 			{type = "breakline"},
 		
