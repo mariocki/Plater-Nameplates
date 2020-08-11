@@ -3164,7 +3164,7 @@ Plater.CreateAuraTesting()
 							local allNpcsDetectedTable = Plater.db.profile.npc_cache
 
 							--the uncompressed table is a numeric table of tables
-							for i, colorTable in ipairs (colorData) do
+							for _, colorTable in pairs (colorData) do
 								--check integrity
 								if (type (colorTable) == "table") then
 									local npcID, scriptOnly, colorID, npcName, zoneName = unpack (colorTable)
@@ -3756,6 +3756,7 @@ Plater.CreateAuraTesting()
 			end
 		end
 		
+		local GetSpellInfo = _G.GetSpellInfo
 		local line_refresh_trigger_dropdown = function (self)
 			if (not self.SpellID) then
 				return {}
@@ -3939,7 +3940,7 @@ Plater.CreateAuraTesting()
 						elseif (spellData.type == "DEBUFF") then
 							line.SpellType.color = "PLATER_DEBUFF"
 							
-						elseif (spellData.event == "SPELL_CAST_START") then
+						elseif (spellData.event == "SPELL_CAST_SUCCESS") then
 							line.SpellType.color = "PLATER_CAST"
 							
 						end
@@ -3950,7 +3951,12 @@ Plater.CreateAuraTesting()
 
 						--{event = token, source = sourceName, type = auraType, npcID = Plater:GetNpcIdFromGuid (sourceGUID or "")}
 
-						line.SpellType:SetText (spellData.event == "SPELL_CAST_START" and "Spell Cast" or spellData.event == "SPELL_AURA_APPLIED" and spellData.type)
+						if (spellData.event == "SPELL_CAST_SUCCESS") then
+							line.SpellType:SetText("Spell Cast")
+
+						elseif (spellData.event == "SPELL_AURA_APPLIED") then
+							line.SpellType:SetText(spellData.type)
+						end
 						
 						line.AddTrackList.SpellID = spellID
 						line.AddTrackList.AuraType = spellData.type
@@ -4641,8 +4647,8 @@ Plater.CreateAuraTesting()
 					color[1], color[2], color[3], color[4] = r, g, b, a
 					Plater.UpdateAllPlates()
 				end,
-				name = "Enrage Border Color",
-				desc = "Enrage Border Color",
+				name = "Offensive Border Color",
+				desc = "Offensive Border Color",
 			},
 			
 			{type = "blank"},
@@ -4671,8 +4677,8 @@ Plater.CreateAuraTesting()
 					color[1], color[2], color[3], color[4] = r, g, b, a
 					Plater.UpdateAllPlates()
 				end,
-				name = "Enrage Border Color",
-				desc = "Enrage Border Color",
+				name = "Defensive Border Color",
+				desc = "Defensive Border Color",
 			},
 		
 		
