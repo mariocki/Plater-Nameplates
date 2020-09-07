@@ -36,7 +36,7 @@ if (UIErrorsFrame) then
 	UIErrorsFrame:EnableMouse (false)
 end
 
-LootFrame:UnregisterEvent("LOOT_OPENED")
+--LootFrame:UnregisterEvent("LOOT_OPENED")
 
 --> blend nameplates with the worldframe
 local AlphaBlending = ALPHA_BLEND_AMOUNT + 0.0654785
