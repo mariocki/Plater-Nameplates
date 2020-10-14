@@ -155,6 +155,11 @@ function Plater.OpenOptionsPanel()
 	DF:ApplyStandardBackdrop (f)
 	f:ClearAllPoints()
 	PixelUtil.SetPoint (f, "center", UIParent, "center", 2, 2, 1, 1)
+	
+	-- version text
+	local versionText = DF:CreateLabel (f, Plater.versionString, 11, "white")
+	versionText:SetPoint ("topright", frame, "topright", -25, -7)
+	versionText:SetAlpha(0.75)
 
 	local profile = Plater.db.profile
 	
@@ -12194,7 +12199,7 @@ end
 				end
 			end,
 			name = "Show Friendly Totems" .. CVarIcon,
-			desc = "Show enemy totems" .. CVarDesc,
+			desc = "Show friendly totems" .. CVarDesc,
 			nocombat = true,
 		},
 
