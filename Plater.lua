@@ -6087,14 +6087,14 @@ end
 			return
 		end
 		
-		local isInCombat = PLAYER_IN_COMBAT
-		
 		local unitFrame = plateFrame.unitFrame
 		local healthBar = unitFrame.healthBar
 		local castBar = unitFrame.castBar
 		local powerBar = unitFrame.powerBar
 		local buffFrame1 = unitFrame.BuffFrame
 		local buffFrame2 = unitFrame.BuffFrame2
+		
+		local isInCombat = unitFrame.InCombat --PLAYER_IN_COMBAT
 		
 		--use in combat bars when in pvp
 		if (plateFrame.actorType == ACTORTYPE_ENEMY_PLAYER) then
@@ -6109,7 +6109,7 @@ end
 		--get the config for this actor type
 		local plateConfigs = DB_PLATE_CONFIG [actorType]
 		--get the config key based if the player is in combat
-		local castBarConfigKey, healthBarConfigKey, manaConfigKey = Plater.GetHashKey (unitFrame.InCombat)
+		local castBarConfigKey, healthBarConfigKey, manaConfigKey = Plater.GetHashKey (isInCombat)
 
 		local healthBarWidth, healthBarHeight = unitFrame.customHealthBarWidth or plateConfigs [healthBarConfigKey][1], unitFrame.customHealthBarHeight or plateConfigs [healthBarConfigKey][2]
 		local castBarWidth, castBarHeight = unitFrame.customCastBarWidth or plateConfigs [castBarConfigKey][1], unitFrame.customCastBarHeight or plateConfigs [castBarConfigKey][2]
@@ -6349,7 +6349,11 @@ end
 				end
 			end
 			
+			local wasCombat = unitFrame.InCombat
 			unitFrame.InCombat = UnitAffectingCombat (tickFrame.unit)
+			if wasCombat ~= unitFrame.InCombat then
+				Plater.UpdatePlateSize (tickFrame.PlateFrame)
+			end
 			
 			--if the unit tapped? (gray color)
 			if (Plater.IsUnitTapDenied (tickFrame.unit)) then
@@ -7226,7 +7230,8 @@ end
 					Plater.SetFontOutlineAndShadow (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_outline, plateConfigs.big_actorname_text_shadow_color, plateConfigs.big_actorname_text_shadow_color_offset[1], plateConfigs.big_actorname_text_shadow_color_offset[2])
 					
 					--npc title
-					if (isValidSubtitle) then
+					local subTitle = Plater.GetActorSubName (plateFrame)
+					if (subTitle and subTitle ~= "" and not subTitle:match (string.gsub(UNIT_LEVEL_TEMPLATE, "%%d", "(%.*)"))) then
 						plateFrame.ActorTitleSpecial:Show()
 						--subTitle = DF:RemoveRealmName (subTitle) -- why are removing real names on npc titles? e.g. <T-Shirt Scalper> Skin-Me-Own-Coat-Dibblefur gets broken to <T>.
 						plateFrame.ActorTitleSpecial:SetText ("<" .. subTitle .. ">")
@@ -7262,7 +7267,8 @@ end
 					Plater.SetFontOutlineAndShadow (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_outline, plateConfigs.big_actorname_text_shadow_color, plateConfigs.big_actorname_text_shadow_color_offset[1], plateConfigs.big_actorname_text_shadow_color_offset[2])
 					
 					--profession (title)
-					if (isValidSubtitle) then
+					local subTitle = Plater.GetActorSubName (plateFrame)
+					if (subTitle and subTitle ~= "" and not subTitle:match (string.gsub(UNIT_LEVEL_TEMPLATE, "%%d", "(%.*)"))) then
 						plateFrame.ActorTitleSpecial:Show()
 						--subTitle = DF:RemoveRealmName (subTitle)
 						plateFrame.ActorTitleSpecial:SetText ("<" .. subTitle .. ">")
@@ -7282,23 +7288,52 @@ end
 					end
 				end
 			else
-				plateFrame.ActorNameSpecial:Show()
-				plateFrame.ActorNameSpecial:SetTextColor (unpack (plateConfigs.big_actorname_text_color))
-				DF:SetFontFace (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_font)
-				DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size)
-				Plater.SetFontOutlineAndShadow (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_outline, plateConfigs.big_actorname_text_shadow_color, plateConfigs.big_actorname_text_shadow_color_offset[1], plateConfigs.big_actorname_text_shadow_color_offset[2])
-				
-				-- ARP
-				if (plateFrame[QUEST_GIVER]) then
-					DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.2)
-					plateFrame.ActorNameSpecial:SetTextColor(0.29, 0.6, 1, 1)
-				
-					Plater._LogToVDT((plateFrame.ActorNameSpecial:GetText() or "??") .. " is quest giver (specific names).", "Mariocki-PF")
-				else
-					if (Plater.IsQuestObjective (plateFrame)) then
-						Plater._LogToVDT((plateFrame.ActorNameSpecial:GetText() or "??") .. " is quest objective (specific names).", "Mariocki-PF")
-					else
-						Plater._LogToVDT((plateFrame.ActorNameSpecial:GetText() or "??") .. " is neither quest giver or objective (specific names).", "Mariocki-PF")
+				--scan tooltip to check if there's an title for this npc
+				local subTitle = Plater.GetActorSubName (plateFrame)
+				if (subTitle and subTitle ~= "" and not Plater.IsNpcInIgnoreList (plateFrame, true)) then
+					if (not subTitle:match (string.gsub(UNIT_LEVEL_TEMPLATE, "%%d", "(%.*)"))) then --isn't level
+
+						plateFrame.ActorTitleSpecial:Show()
+						--subTitle = DF:RemoveRealmName (subTitle)
+						plateFrame.ActorTitleSpecial:SetText ("<" .. subTitle .. ">")
+						plateFrame.ActorTitleSpecial:ClearAllPoints()
+						PixelUtil.SetPoint (plateFrame.ActorTitleSpecial, "top", plateFrame.ActorNameSpecial, "bottom", 0, -2)
+						
+						plateFrame.ActorTitleSpecial:SetTextColor (unpack (plateConfigs.big_actortitle_text_color))
+						plateFrame.ActorNameSpecial:SetTextColor (unpack (plateConfigs.big_actorname_text_color))
+						
+						DF:SetFontSize (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_size)
+						DF:SetFontFace (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_font)
+						
+						--DF:SetFontOutline (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_shadow)
+						Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_outline, plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
+						
+						--npc name
+						plateFrame.ActorNameSpecial:Show()
+						plateFrame.ActorNameSpecial:SetTextColor (unpack (plateConfigs.big_actorname_text_color))
+
+						plateFrame.CurrentUnitNameString = plateFrame.ActorNameSpecial
+						Plater.UpdateUnitName (plateFrame)
+
+						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size)
+						DF:SetFontFace (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_font)
+						
+						--DF:SetFontOutline (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_shadow)
+						Plater.SetFontOutlineAndShadow (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_outline, plateConfigs.big_actorname_text_shadow_color, plateConfigs.big_actorname_text_shadow_color_offset[1], plateConfigs.big_actorname_text_shadow_color_offset[2])
+
+						-- ARP
+						if (plateFrame[QUEST_GIVER]) then
+							DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.2)
+							plateFrame.ActorNameSpecial:SetTextColor(0.29, 0.6, 1, 1)
+						
+							Plater._LogToVDT((plateFrame.ActorNameSpecial:GetText() or "??") .. " is quest giver (specific names).", "Mariocki-PF")
+						else
+							if (Plater.IsQuestObjective (plateFrame)) then
+								Plater._LogToVDT((plateFrame.ActorNameSpecial:GetText() or "??") .. " is quest objective (specific names).", "Mariocki-PF")
+							else
+								Plater._LogToVDT((plateFrame.ActorNameSpecial:GetText() or "??") .. " is neither quest giver or objective (specific names).", "Mariocki-PF")
+							end
+						end
 					end
 				end
 
@@ -7737,7 +7772,7 @@ end
 			local subTitleExists = false
 			local subTitle = Plater.GetActorSubName (plateFrame)
 			if (subTitle and subTitle ~= "" and not Plater.IsNpcInIgnoreList (plateFrame, true)) then
-				if (not subTitle:match ("%d")) then --isn't level
+				if (not subTitle:match (string.gsub(UNIT_LEVEL_TEMPLATE, "%%d", "(%.*)"))) then --isn't level
 					subTitleExists = true
 				end
 			end
