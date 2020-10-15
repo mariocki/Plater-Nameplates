@@ -648,6 +648,8 @@ Plater.DefaultSpellRangeList = {
 	[71] = 30, --> warrior arms
 	[72] = 30, --> warrior fury
 	[73] = 30, --> warrior protect
+	
+	[1444] = 40, --> DAMAGER (low-level chars)
 }
 
 --> default ranges to use in the range check proccess against friendlies, player can select a different range in the options panel
@@ -699,6 +701,8 @@ Plater.DefaultSpellRangeListF = {
 	[71] = 30, --> warrior arms
 	[72] = 30, --> warrior fury
 	[73] = 30, --> warrior protect
+	
+	[1444] = 40, --> DAMAGER (low-level chars)
 }
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -918,18 +922,15 @@ Plater.DefaultSpellRangeListF = {
 				
 				
 			elseif (class == "WARRIOR") then
-				--is playing as a Arms warrior?
+				-- Execute is baseline
 				local specID = GetSpecializationInfo (spec)
 				if (specID and specID ~= 0) then
-					if (specID == 71 or specID == 72) then --arms or fury
-						Plater.SetExecuteRange (true, 0.20)
-						
-						if (specID == 71) then --arms
-							local _, _, _, using_Massacre = GetTalentInfo (3, 1, 1)
-							if (using_Massacre) then
-								--if using massacre, execute can be used at 35% health in Arms spec
-								Plater.SetExecuteRange (true, 0.35)
-							end
+					Plater.SetExecuteRange (true, 0.20)
+					if (specID == 71) then --arms
+						local _, _, _, using_Massacre = GetTalentInfo (3, 1, 1)
+						if (using_Massacre) then
+							--if using massacre, execute can be used at 35% health in Arms spec
+							Plater.SetExecuteRange (true, 0.35)
 						end
 					end
 				end
@@ -945,17 +946,15 @@ Plater.DefaultSpellRangeListF = {
 						end
 					end
 				end
+				
 			elseif (class == "PALADIN") then
-				local specID = GetSpecializationInfo (spec)
-				if (specID and specID ~= 0) then
-					if (specID == 70) then --retribution paladin
-						--> is using hammer of wrath?
-						local _, _, _, using_HammerOfWrath = GetTalentInfo (2, 3, 1)
-						if (using_HammerOfWrath) then
-							Plater.SetExecuteRange (true, 0.2)
-						end
-					end
-				end
+				-- hammer of wrath
+				Plater.SetExecuteRange (true, 0.2)
+				
+			elseif (class == "MONK") then
+				--Touch of Death
+				Plater.SetExecuteRange (true, 0.15)
+				
 			end
 		end
 	end	
@@ -1267,8 +1266,8 @@ Plater.DefaultSpellRangeListF = {
 			local specID = GetSpecializationInfo (specIndex)
 			if (specID and specID ~= 0) then
 				--the local character saved variable hold the spell name used for the range check
-				Plater.RangeCheckRangeFriendly = PlaterDBChr.spellRangeCheckRangeFriendly [specID]
-				Plater.RangeCheckRangeEnemy = PlaterDBChr.spellRangeCheckRangeEnemy [specID]
+				Plater.RangeCheckRangeFriendly = PlaterDBChr.spellRangeCheckRangeFriendly [specID] or Plater.DefaultSpellRangeListF [specID] or 40
+				Plater.RangeCheckRangeEnemy = PlaterDBChr.spellRangeCheckRangeEnemy [specID] or Plater.DefaultSpellRangeList [specID] or 40
 				Plater.RangeCheckFunctionFriendly = LibRangeCheck:GetFriendMaxChecker(Plater.RangeCheckRangeFriendly)
 				Plater.RangeCheckFunctionEnemy = LibRangeCheck:GetHarmMaxChecker(Plater.RangeCheckRangeEnemy)
 			else
