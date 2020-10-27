@@ -527,6 +527,8 @@ PLATER_DEFAULT_SETTINGS = {
 		
 		enable_masque_support = false,
 		
+		use_player_combat_state = false,
+		
 		last_news_time = 0,
 		disable_omnicc_on_auras = false,
 		
@@ -2486,6 +2488,8 @@ PLATER_DEFAULT_SETTINGS = {
 		},
 		
 		aggro_can_check_notank = false,
+		
+		show_aggro_flash = false,
 		
 		tank = {
 			colors = {
