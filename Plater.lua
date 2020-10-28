@@ -3210,7 +3210,6 @@ Plater.DefaultSpellRangeListF = {
 			--clear values
 			plateFrame.CurrentUnitNameString = plateFrame.unitName
 			
-			plateFrame.isSelf = nil
 			plateFrame.IsSelf = nil
 			unitFrame.IsSelf = nil --value exposed to scripts
 			castBar.IsSelf = nil --value exposed to scripts
@@ -3307,7 +3306,6 @@ Plater.DefaultSpellRangeListF = {
 				
 				if (UnitIsUnit (unitID, "player")) then
 					--> personal health bar
-					plateFrame.isSelf = true
 					plateFrame.IsSelf = true
 					unitFrame.IsSelf = true --this is the value exposed to scripts
 					castBar.IsSelf = true --this is the value exposed to scripts
