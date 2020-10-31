@@ -381,6 +381,7 @@ Plater.TargetHighlights = {
 	[[Interface\AddOns\Plater\images\selection_indicator5]],
 	[[Interface\AddOns\Plater\images\selection_indicator6]],
 	[[Interface\AddOns\Plater\images\selection_indicator7]],
+	[[Interface\AddOns\Plater\images\selection_indicator8]],
 }
 
 --> icons available for any purpose
@@ -2448,9 +2449,11 @@ Plater.DefaultSpellRangeListF = {
 			if (unitID) then
 				local plateFrame = C_NamePlate.GetNamePlateForUnit (unitID)
 				if (plateFrame) then
+					local unitFrame = plateFrame.unitFrame
 					plateFrame [MEMBER_NAME] = UnitName (unitID)
 					plateFrame [MEMBER_NAMELOWER] = lower (plateFrame [MEMBER_NAME])
-					local unitFrame = plateFrame.unitFrame
+					unitFrame [MEMBER_NAME] = plateFrame [MEMBER_NAME]
+					unitFrame [MEMBER_NAMELOWER] = plateFrame [MEMBER_NAMELOWER]
 					
 					if (plateFrame.IsSelf) then
 						--name isn't shown in the personal bar
@@ -3282,6 +3285,10 @@ Plater.DefaultSpellRangeListF = {
 			unitFrame.BuffFrame.unit = unitID
 			unitFrame.BuffFrame2.unit = unitID
 			
+			local isBattlePet = UnitIsBattlePet(unitID)
+			plateFrame.isBattlePet = isBattlePet
+			unitFrame.isBattlePet = isBattlePet
+			
 			--clear the custom indicators table
 			wipe (unitFrame.CustomIndicators)
 			
@@ -3368,6 +3375,16 @@ Plater.DefaultSpellRangeListF = {
 							if (DB_CASTBAR_HIDE_FRIENDLY) then
 								CastingBarFrame_SetUnit (castBar, nil, nil, nil)
 							end
+						elseif isBattlePet then
+							plateFrame.NameAnchor = DB_NAME_NPCFRIENDLY_ANCHOR
+							plateFrame.PlateConfig = DB_PLATE_CONFIG.friendlynpc
+							Plater.UpdatePlateFrame (plateFrame, ACTORTYPE_FRIENDLY_NPC, nil, true)
+							actorType = ACTORTYPE_FRIENDLY_NPC
+							unitFrame.Settings.ShowCastBar = not DB_CASTBAR_HIDE_FRIENDLY
+							if (DB_CASTBAR_HIDE_FRIENDLY) then
+								CastingBarFrame_SetUnit (castBar, nil, nil, nil)
+							end
+							
 						else
 							--includes neutral npcs
 							
@@ -7702,6 +7719,11 @@ end
 
 	function Plater.UpdateSpellNameSize (nameString, actorType, cutOff, inCombat)
 		local spellName = nameString:GetText()
+		
+		if not spellName or spellName == "" then
+			return
+		end
+		
 		local maxLength = Plater.MaxCastBarTextLength or 500
 		cutOff = cutOff or 40
 		actorType = actorType or "enemynpc"
@@ -7713,26 +7735,26 @@ end
 			end
 		end
 		
-		local shortBy = 1
-		if Plater.Locale == "ruRU" then
-			shortBy = 2
-		end
-		
 		while (nameString:GetStringWidth() > maxLength) do
-			spellName = strsub (spellName, 1, #spellName - shortBy)
+			spellName = strsub (spellName, 1, #spellName - 1)
 			nameString:SetText (spellName)
 			if (string.len (spellName) <= 1) then
 				break
 			end
 		end
 		
-		if Plater.Locale == "ruRU" then
-			local specialCharsSplit = {strsplit("[ -]", spellName)}
-			specialCharsSplit = specialCharsSplit and #specialCharsSplit - 1 or 0
-			if specialCharsSplit == 0 and strfind(spellName, "[ -]") then
-				specialCharsSplit = specialCharsSplit + 1
-			end
-			spellName = strsub (spellName, 1, #spellName - math.fmod(#spellName - specialCharsSplit, 2))
+		-- cleanup utf8...
+		local b1 = strbyte(strsub(spellName, #spellName, #spellName))
+		local b2 = strbyte(strsub(spellName, #spellName-1, #spellName))
+		local b3 = strbyte(strsub(spellName, #spellName-2, #spellName))
+		if b1 >= 194 and b1 <= 244 then
+			spellName = strsub (spellName, 1, #spellName - 1)
+			nameString:SetText (spellName)
+		elseif b2 >= 224 and b2 <= 244 then
+			spellName = strsub (spellName, 1, #spellName - 2)
+			nameString:SetText (spellName)
+		elseif b3 >= 240 and b3 <= 244 then
+			spellName = strsub (spellName, 1, #spellName - 3)
 			nameString:SetText (spellName)
 		end
 		
@@ -7751,12 +7773,12 @@ end
 		if (plateFrame.NameAnchor >= 9) then
 			--remove some character from the unit name if the name is placed inside the nameplate
 			local stringSize = max (plateFrame.unitFrame.healthBar:GetWidth() - 6, 44)
-			local name = plateFrame [MEMBER_NAME]
+			local name = plateFrame [MEMBER_NAME] or plateFrame.unitFrame [MEMBER_NAME]
 			
 			nameString:SetText (name)
 			Plater.UpdateUnitNameTextSize (plateFrame, nameString)
 		else
-			nameString:SetText (plateFrame [MEMBER_NAME])
+			nameString:SetText (plateFrame [MEMBER_NAME] or plateFrame.unitFrame [MEMBER_NAME])
 		end
 		
 		--check if the player has a guild, this check is done when the nameplate is added
@@ -7773,12 +7795,31 @@ end
 		
 		nameString:SetText (name)
 		
+		if not name or name == "" then
+			return
+		end
+		
 		while (nameString:GetStringWidth() > stringSize) do
 			name = strsub (name, 1, #name-1)
 			nameString:SetText (name)
 			if (string.len (name) <= 1) then
 				break
 			end
+		end
+		
+		-- cleanup utf8...
+		local b1 = strbyte(strsub(name, #name, #name))
+		local b2 = strbyte(strsub(name, #name-1, #name))
+		local b3 = strbyte(strsub(name, #name-2, #name))
+		if b1 >= 194 and b1 <= 244 then
+			name = strsub (name, 1, #name - 1)
+			nameString:SetText (name)
+		elseif b2 >= 224 and b2 <= 244 then
+			name = strsub (name, 1, #name - 2)
+			nameString:SetText (name)
+		elseif b3 >= 240 and b3 <= 244 then
+			name = strsub (name, 1, #name - 3)
+			nameString:SetText (name)
 		end
 	end
 
@@ -7904,7 +7945,7 @@ end
 			Plater.ForceFindPetOwner (plateFrame [MEMBER_GUID])
 		
 			-- handle own pets separately, including nazjatar guardians
-			if (Plater.PlayerPetCache [unitFrame [MEMBER_GUID]]) then
+			if (Plater.PlayerPetCache [unitFrame [MEMBER_GUID]] and not plateFrame.isBattlePet) then
 				if (DB_PLATE_CONFIG [actorType].only_names) then
 					healthBar:Hide()
 					buffFrame:Hide()
@@ -9899,6 +9940,10 @@ end
 		maxWidth = max (maxWidth or 0, 10)
 		local text = fontString:GetText()
 		
+		if not text or text == "" then
+			return
+		end
+		
 		while (fontString:GetStringWidth() > maxWidth) do
 			text = strsub (text, 1, #text - 1)
 			fontString:SetText (text)
@@ -9906,6 +9951,22 @@ end
 				break
 			end
 		end	
+		
+		-- cleanup utf8...
+		local b1 = strbyte(strsub(text, #text, #text))
+		local b2 = strbyte(strsub(text, #text-1, #text))
+		local b3 = strbyte(strsub(text, #text-2, #text))
+		if b1 >= 194 and b1 <= 244 then
+			text = strsub (text, 1, #text - 1)
+			fontString:SetText (text)
+		elseif b2 >= 224 and b2 <= 244 then
+			text = strsub (text, 1, #text - 2)
+			fontString:SetText (text)
+		elseif b3 >= 240 and b3 <= 244 then
+			text = strsub (text, 1, #text - 3)
+			fontString:SetText (text)
+		end
+		
 	end
 	
 	--create a custom aura checking, this reset the currently shown auras and only check for auras the script passed
