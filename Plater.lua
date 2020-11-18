@@ -947,6 +947,11 @@ Plater.DefaultSpellRangeListF = {
 					lowExecute = 0.35
 				end
 			
+			elseif (class == "DEATHKNIGHT") then
+				if IsPlayerSpell(343294) then --Soul Reaper
+					lowExecute = 0.35
+				end
+			
 			end
 		end
 		
@@ -5154,9 +5159,11 @@ end
 			end
 			
 			--if not in combat, check if can show the percent health out of combat
-			if (actorTypeDBConfig.percent_text_enabled and ((profile.use_player_combat_state and PLAYER_IN_COMBAT or unitFrame.InCombat)) or actorTypeDBConfig.percent_text_ooc) then
+			if (actorTypeDBConfig.percent_text_enabled and (((profile.use_player_combat_state and PLAYER_IN_COMBAT or unitFrame.InCombat)) or actorTypeDBConfig.percent_text_ooc)) then
 				Plater.UpdateLifePercentText (healthBar, unitFrame.unit, actorTypeDBConfig.percent_show_health, actorTypeDBConfig.percent_show_percent, actorTypeDBConfig.percent_text_show_decimals)
 				healthBar.lifePercent:Show()
+			else
+				healthBar.lifePercent:Hide()
 			end
 						
 			--if the unit tapped? (gray color)
@@ -6377,11 +6384,15 @@ end
 		if (Plater.db.profile.use_player_combat_state and PLAYER_IN_COMBAT or unitFrame.InCombat) then
 			if (actorTypeDBConfig.percent_text_enabled) then
 				Plater.UpdateLifePercentText (unitFrame.healthBar, unitFrame.unit, actorTypeDBConfig.percent_show_health, actorTypeDBConfig.percent_show_percent, actorTypeDBConfig.percent_text_show_decimals)
+			else
+				unitFrame.healthBar.lifePercent:Hide()
 			end
 		else
 			--if not in combat, check if can show the percent health out of combat
 			if (actorTypeDBConfig.percent_text_enabled and actorTypeDBConfig.percent_text_ooc) then
 				Plater.UpdateLifePercentText (unitFrame.healthBar, unitFrame.unit, actorTypeDBConfig.percent_show_health, actorTypeDBConfig.percent_show_percent, actorTypeDBConfig.percent_text_show_decimals)
+			else
+				unitFrame.healthBar.lifePercent:Hide()
 			end
 		end
 	end
@@ -10205,7 +10216,7 @@ end
 		if (PlaterScriptLibrary) then
 			for name, autoImportScript in pairs (PlaterScriptLibrary) do
 				local importedDB
-				
+
 				if (autoImportScript.ScriptType == "script") then
 					importedDB = Plater.db.profile.script_auto_imported
 					
@@ -10218,7 +10229,7 @@ end
 
 					local encodedString = autoImportScript.String
 					if (encodedString) then
-						local success, scriptAdded = Plater.ImportScriptString (encodedString, true, false, false)
+						local success, scriptAdded = Plater.ImportScriptString (encodedString, true, autoImportScript.OverrideTriggers, false, false)
 						if (success) then
 							if (autoImportScript.Revision == 1) then
 								Plater:Msg ("New Script Installed: " .. name)
@@ -10306,7 +10317,6 @@ end
 			local newScript = Plater.BuildScriptObjectFromIndexTable (indexScriptTable, scriptType)
 			
 			if (newScript) then
-			
 				if (scriptType == "script") then
 					local scriptName = newScript.Name
 					local alreadyExists = false
