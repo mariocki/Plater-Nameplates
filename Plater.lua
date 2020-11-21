@@ -5893,7 +5893,7 @@ end
 						DF:SetFontFace (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_font)
 
 						-- ARP
-						if (plateFrame[MEMBER_REACTION] == UNITREACTION_NEUTRAL]) then
+						if (plateFrame[MEMBER_REACTION] == UNITREACTION_NEUTRAL) then
 							Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, "NONE", plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
 						else
 							Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_outline, plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
