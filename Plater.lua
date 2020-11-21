@@ -36,8 +36,6 @@ if (UIErrorsFrame) then
 	UIErrorsFrame:EnableMouse (false)
 end
 
---LootFrame:UnregisterEvent("LOOT_OPENED")
-
 --> blend nameplates with the worldframe
 local AlphaBlending = ALPHA_BLEND_AMOUNT + 0.0654785
 
@@ -67,7 +65,6 @@ local lower = string.lower
 local floor = floor
 local max = math.max
 local min = math.min
---local guildName, _, _ = GetGuildInfo("player")
 
 local PixelUtil = _G.PixelUtil
 
@@ -85,6 +82,7 @@ local Plater = DF:CreateAddOn ("Plater", "PlaterDB", PLATER_DEFAULT_SETTINGS, { 
 	}
 })
 
+-- ARP
 Plater.playerGuild = select(1, GetGuildInfo("player")) or ""
 
 Plater.versionString = GetAddOnMetadata("Plater_dev", "Version") or GetAddOnMetadata("Plater", "Version")
@@ -318,9 +316,6 @@ local MEMBER_NOCOMBAT = "namePlateNoCombat"
 local MEMBER_NAME = "namePlateUnitName"
 local MEMBER_NAMELOWER = "namePlateUnitNameLower"
 local MEMBER_TARGET = "namePlateIsTarget"
-
--- ARP
-local QUEST_GIVER = false --namePlateQuestGiver
 
 --> cache nameplate types for better reading the code
 local ACTORTYPE_FRIENDLY_PLAYER = "friendlyplayer"
@@ -836,11 +831,6 @@ Plater.DefaultSpellRangeListF = {
 	
 	--store quests the player is in
 	Plater.QuestCache = {}
-	
-	-- ARP all npcIds who have quests available
-	Plater.NpcsWithQuests = {}
-	Plater.LastNpcScan = 0
-	Plater.LastMapId = 0
 
 	--cache the profile settings for each actor type on this table, so scripts can have access to profile
 	Plater.ActorTypeSettingsCache = { --private
@@ -870,6 +860,7 @@ Plater.DefaultSpellRangeListF = {
 		Plater.ActorTypeSettingsCache.RefreshID = PLATER_REFRESH_ID
 	end
 	
+	-- ARP
 	function Plater._LogToVDT(logMessage, tag)
 		if (ViragDevTool_AddData) then
 			ViragDevTool_AddData(logMessage, tag)
@@ -968,6 +959,7 @@ Plater.DefaultSpellRangeListF = {
 
 	--> range check ~range
 	function Plater.CheckRange (plateFrame, onAdded)
+		-- ARP
 		if (not plateFrame) then
 			return
 		end
@@ -1078,13 +1070,7 @@ Plater.DefaultSpellRangeListF = {
 		local buffFrame1 = unitFrame.BuffFrame
 		local buffFrame2 = unitFrame.BuffFrame2		
 
-		if (plateFrame[QUEST_GIVER]) then
-			plateFrame.unitFrame:SetAlpha (inRangeAlpha)
-			plateFrame.ActorNameSpecial:SetAlpha(inRangeAlpha)
-			plateFrame.ActorTitleSpecial:SetAlpha(inRangeAlpha)
-			return
-		end
-
+		-- ARP
 		if (plateFrame [MEMBER_REACTION] >= 5) then
 			if (plateFrame.ActorTitleSpecial and plateFrame.ActorTitleSpecial:GetText() ~= '' and plateFrame.ActorTitleSpecial:GetText() ~= nil) then
 				plateFrame.unitFrame:SetAlpha (inRangeAlpha * 0.66)
@@ -1100,6 +1086,7 @@ Plater.DefaultSpellRangeListF = {
 			return
 		end
 
+		-- ARP
 		if (plateFrame.IsNpcWithoutHealthBar) then
 			plateFrame.unitFrame:SetAlpha (inRangeAlpha * 0.33)
 			plateFrame.ActorNameSpecial:SetAlpha(inRangeAlpha * 0.33)
@@ -2218,7 +2205,6 @@ Plater.DefaultSpellRangeListF = {
 		end,
 		QUEST_COMPLETE = function()
 			Plater.QuestLogUpdated()
-			C_Timer.After (.5, Plater.UpdateQuestNPCIds, true)
 		end,
 		QUEST_POI_UPDATE = function()
 			Plater.QuestLogUpdated()
@@ -2237,7 +2223,6 @@ Plater.DefaultSpellRangeListF = {
 		end,
 		QUEST_LOG_UPDATE = function()
 			Plater.QuestLogUpdated()
-			C_Timer.After (.5, Plater.UpdateQuestNPCIds, true)
 		end,
 		UNIT_QUEST_LOG_CHANGED = function()
 			Plater.QuestLogUpdated()
@@ -2340,10 +2325,6 @@ Plater.DefaultSpellRangeListF = {
 
 		ZONE_CHANGED = function()
 			Plater.RunFunctionForEvent ("ZONE_CHANGED_NEW_AREA")
-
-			--ARP
-			table.wipe(Plater.NpcsWithQuests)
-			C_Timer.After (1, Plater.UpdateQuestNPCIds, false)
 		end,
 		
 		PLAYER_ENTERING_WORLD = function()
@@ -2383,9 +2364,6 @@ Plater.DefaultSpellRangeListF = {
 			--create the frame to hold the plater resoruce bar
 			Plater.CreatePlaterResourceFrame() --~resource
 
-			--ARP
-			C_Timer.After (1, Plater.UpdateQuestNPCIds, true)
-			
 			--run hooks on load screen
 			if (HOOK_LOAD_SCREEN.ScriptAmount > 0) then
 				Plater.PlayerEnteringWorld = true
@@ -3376,150 +3354,6 @@ Plater.DefaultSpellRangeListF = {
 			
 		end,
 	}
-
-	-- ARP
-	function Plater.IsQuestGiver(plateFrame)
-		if (not plateFrame or not plateFrame [MEMBER_NPCID]) then return end
-		local _grail = Grail
-
-		if (not _grail or not _grail.versionNumber) then return end
-
-		local grailNPCName = Grail:NPCName(plateFrame [MEMBER_NPCID])
-
-		--Plater._LogToVDT(plateFrame [MEMBER_NPCID] .. " converted to " .. grailNPCName)
-		plateFrame[QUEST_GIVER] = tContains(Plater.NpcsWithQuests, grailNPCName)
-
-		--Plater._LogToVDT("checking if " .. grailNPCName .. " is a quest giver: " .. tostring(plateFrame [QUEST_GIVER]))
-	end
-
-	-- ARP
-	function Plater.UpdateQuestNPCIds(forceUpdate)
-		if (UnitOnTaxi("player")) then
-			Plater._LogToVDT("------- on taxi, skipping npc scan", "Mariocki")
-			return
-		end			
-
-		local mapID = C_Map.GetBestMapForUnit("player"); 
-		if (not mapID) then
-			Plater._LogToVDT("<<<<<<< unable to find map >>>>>>>>", "Mariocki")
-			return
-		end
-		Plater._LogToVDT(format("<<<<<<< ZONE %s (%d) >>>>>>>>", C_Map.GetMapInfo(mapID).name, mapID), "Mariocki")
-		local currentTime = time()
-
-		if (mapID == Plater.LastMapId and not forceUpdate and Plater.NpcsWithQuests ~= {}) then
-			if ((currentTime - Plater.LastNpcScan) < 5) then
-				Plater._LogToVDT("------- skipping npc scan", "Mariocki")
-				return
-			end
-		end
-		Plater.LastNpcScan = currentTime
-		Plater.LastMapId = mapID
-
-		local _grail = Grail
-
-		if (not _grail or not _grail.versionNumber) then return end
-
-		Grail:_AddWorldQuests()
-
-		local allQuestIdsInMap = Grail:QuestsInMap()
-
-		if (not allQuestIdsInMap) then return end
-
-		table.sort(allQuestIdsInMap)
-		
-		Plater._LogToVDT("------- GETTING DAILIES FROM API", "Mariocki")
-		local xx = C_TaskQuest.GetQuestsForPlayerByMapID(C_Map.GetBestMapForUnit("player"))
-		local dailyAndWQ = {}
-		for _, x in pairs(xx) do
-			tinsert(dailyAndWQ, x.questId)
-			Plater._LogToVDT("Quest Id: " .. x.questId .. " Daily: " .. tostring(x.isDaily), "Mariocki")
-		end
-
-		Plater._LogToVDT("------- FILTERING QUESTS", "Mariocki")
-		local allQuestsInMapAvailableToday = {}
-		for k, v in pairs(allQuestIdsInMap) do
-			if (Grail:IsWorldQuest(v)) then
-				if (tContains(dailyAndWQ, v)) then
-					if ((Grail:IsAvailable(v) and Grail:CanAcceptQuest(v, false, false, true, false, false, false)) or bit.band(Grail:StatusCode(v), Grail.bitMaskInLog) > 0) then -- and not Grail:IsQuestCompleted(v) ) then
-						Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. string.format("%x", Grail:StatusCode(v)) .. " WQ available.", "Mariocki")
-						tinsert(allQuestsInMapAvailableToday, v)
-					else
-						Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. string.format("%x", Grail:StatusCode(v)) .. " WQ and not available, ignoring.", "Mariocki")
-					end
-				else
-					Plater._LogToVDT("Quest Id: " .. v .. " is a WQ not returned by API, adding anyway.", "Mariocki")
-					tinsert(allQuestsInMapAvailableToday, v)					
-				end
-			else
-				if (Grail:CanAcceptQuest(v, false, false, true, false, false, false) or bit.band(Grail:StatusCode(v), Grail.bitMaskInLog) > 0) then
-					if (Grail:IsDaily(v)) then
-						if (tContains(dailyAndWQ, v)) then
-							tinsert(allQuestsInMapAvailableToday, v)
-							Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. string.format("%x", Grail:StatusCode(v)) .. " Daily available.", "Mariocki")
-						else
-							Plater._LogToVDT("Quest Id: " .. v .. " is a daily not returned by API, ignoring.", "Mariocki")
-						end
-					elseif (Grail:IsWeekly(v)) then
-						tinsert(allQuestsInMapAvailableToday, v)
-						Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. string.format("%x", Grail:StatusCode(v)) .. " Weekly available.", "Mariocki")
-					else
-						tinsert(allQuestsInMapAvailableToday, v)
-						Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. string.format("%x", Grail:StatusCode(v)) .. " available.", "Mariocki")
-					end
-				else
-					if (Grail:IsDaily(v)) then
-						Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. string.format("%x", Grail:StatusCode(v)) .. " daily quest completed, ignoring.", "Mariocki")
-					elseif (Grail:IsWeekly(v)) then
-						Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. string.format("%x", Grail:StatusCode(v)) .. " weekly quest completed, ignoring.", "Mariocki")
-					else
-						Plater._LogToVDT("Quest Id: " .. v .. ", status: " .. string.format("%x", Grail:StatusCode(v)) .. " quest completed, ignoring.", "Mariocki")
-					end
-				end
-			end
-		end
-
-		Plater._LogToVDT("Number of available quests: " .. #(allQuestsInMapAvailableToday), "Mariocki")
-
-		local _iterateOverNPCs = function(incomingNpc, npcMasterList, questId, action)
-			if (not incomingNpc) then
-				return
-			end
-
-			for k2, v2 in pairs(incomingNpc) do
-				if (v2) then 
-					local npcId = Grail:_NPCIndex(v2)
-					if (npcId) then
-						if (npcId == 0) then
-							Plater._LogToVDT("Unkown NPC (" .. v2 .. "/" .. npcId .. ") for questId: " .. questId .. " with status: " .. Grail:StatusCode(questId), "Mariocki")
-						else
-							local npcName = Grail:NPCName(v2) or "??"
-							if (Grail:IsNPCAvailable(v2) and not tContains(npcMasterList, npcName) and npcName ~= "??" and npcName ~= "Self") then
-								tinsert(npcMasterList, npcName)	
-								Plater._LogToVDT("Adding " .. (npcName or "??") .. " (" .. v2 .. "/" .. npcId .. ")" .. " to list of NPC's with a quest.", "Mariocki")
-							else
-								Plater._LogToVDT((npcName or "??") .. " (" .. v2 .. "/" .. npcId .. ")" .. " Does not have any quests.", "Mariocki")
-							end
-						end
-					end
-				end
-			end
-
-			return npcsWithAQuest
-		end
-
-		Plater._LogToVDT("------- MAPPING TO NPCs", "Mariocki")
-
-		local npcsWithAQuest = {}
-		for k, v in pairs(allQuestsInMapAvailableToday) do
-			_iterateOverNPCs(Grail:QuestNPCAccepts(v), npcsWithAQuest, v, "Gives")
-			_iterateOverNPCs(Grail:QuestNPCTurnins(v), npcsWithAQuest, v, "Completes")
-		end
-
-		Plater.NpcsWithQuests = npcsWithAQuest
-		
-		Plater._LogToVDT("------- DONE ".. #(Plater.NpcsWithQuests), "Mariocki")
-	end
 
 	function Plater.EventHandler (_, event, ...) --private
 		local func = eventFunctions [event]
@@ -5884,9 +5718,6 @@ end
 	-- update all texts in the nameplate, settings can variate from different unit types
 	-- needReset is true when the previous unit type shown on this place is different from the current unit
 	function Plater.UpdatePlateText (plateFrame, plateConfigs, needReset) --private
-	
-		-- ARP
-		Plater.IsQuestGiver(plateFrame)
 
 		-- ensure castBar updates are done, as this needs to be done for all types of plates...
 		local spellnameString = plateFrame.unitFrame.castBar.Text
@@ -6041,21 +5872,9 @@ end
 						if (plateFrame [MEMBER_REACTION] <= 3) then
 							r, g, b, a = 1, .05, .05, 1
 						end
-						if (plateFrame[QUEST_GIVER]) then
-							r, g, b, a = 0.29, 0.6, 1, 1
-						end
 					end
 					
 					plateFrame.ActorNameSpecial:SetTextColor (r, g, b, a)
-					-- ARP
-					if (plateFrame[QUEST_GIVER]) then
-						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.2)						
-						plateFrame.ActorNameSpecial:SetTextColor(0.29, 0.6, 1, 1)
-						Plater._LogToVDT(plateFrame.ActorNameSpecial:GetText() .. " is enemy/neutral NPC quest giver (all names).", "Mariocki-PF")
-					else
-						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size)
-						Plater._LogToVDT(plateFrame.ActorNameSpecial:GetText() .. " is enemy/neutral NPC (all names).", "Mariocki-PF")
-					end					
 					DF:SetFontFace (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_font)
 					
 					Plater.SetFontOutlineAndShadow (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_outline, plateConfigs.big_actorname_text_shadow_color, plateConfigs.big_actorname_text_shadow_color_offset[1], plateConfigs.big_actorname_text_shadow_color_offset[2])
@@ -6069,10 +5888,12 @@ end
 						plateFrame.ActorTitleSpecial:ClearAllPoints()
 						PixelUtil.SetPoint (plateFrame.ActorTitleSpecial, "top", plateFrame.ActorNameSpecial, "bottom", 0, -2)
 						
+						plateFrame.ActorTitleSpecial:SetTextColor (r, g, b, a)
 						DF:SetFontSize (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_size)
 						DF:SetFontFace (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_font)
 
-						if (plateFrame[MEMBER_REACTION] == UNITREACTION_NEUTRAL or plateFrame[QUEST_GIVER]) then
+						-- ARP
+						if (plateFrame[MEMBER_REACTION] == UNITREACTION_NEUTRAL]) then
 							Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, "NONE", plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
 						else
 							Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_outline, plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
@@ -6084,15 +5905,6 @@ end
 				else
 					--it's a friendly npc
 					plateFrame.ActorNameSpecial:SetTextColor (unpack (plateConfigs.big_actorname_text_color))
-					-- ARP
-					if (plateFrame[QUEST_GIVER]) then
-						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.2)
-						plateFrame.ActorNameSpecial:SetTextColor(0.29, 0.6, 1, 1)
-						Plater._LogToVDT(plateFrame.ActorNameSpecial:GetText() .. " is friendly NPC quest giver (all names).", "Mariocki-PF")
-					else
-						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size)
-						Plater._LogToVDT(plateFrame.ActorNameSpecial:GetText() .. " is friendly NPC (all names).", "Mariocki-PF")
-					end
 					DF:SetFontFace (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_font)
 					
 					Plater.SetFontOutlineAndShadow (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_outline, plateConfigs.big_actorname_text_shadow_color, plateConfigs.big_actorname_text_shadow_color_offset[1], plateConfigs.big_actorname_text_shadow_color_offset[2])
@@ -6112,9 +5924,6 @@ end
 
 						Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_outline, plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
 					else
-						if (not plateFrame[QUEST_GIVER] and not plateFrame[MEMBER_QUEST]) then 
-							plateFrame.ActorNameSpecial:Hide()
-						end
 						plateFrame.ActorTitleSpecial:Hide()
 					end
 				end
@@ -6151,23 +5960,10 @@ end
 						
 						--DF:SetFontOutline (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_shadow)
 						Plater.SetFontOutlineAndShadow (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_outline, plateConfigs.big_actorname_text_shadow_color, plateConfigs.big_actorname_text_shadow_color_offset[1], plateConfigs.big_actorname_text_shadow_color_offset[2])
-
-						-- ARP
-						if (plateFrame[QUEST_GIVER]) then
-							DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size * 1.2)
-							plateFrame.ActorNameSpecial:SetTextColor(0.29, 0.6, 1, 1)
-						
-							Plater._LogToVDT((plateFrame.ActorNameSpecial:GetText() or "??") .. " is quest giver (specific names).", "Mariocki-PF")
-						else
-							if (Plater.IsQuestObjective (plateFrame)) then
-								Plater._LogToVDT((plateFrame.ActorNameSpecial:GetText() or "??") .. " is quest objective (specific names).", "Mariocki-PF")
-							else
-								Plater._LogToVDT((plateFrame.ActorNameSpecial:GetText() or "??") .. " is neither quest giver or objective (specific names).", "Mariocki-PF")
-							end
-						end
 					end
 				end
 
+				-- ARP
 				--scan tooltip to check if there's an title for this npc
 				if (isValidSubtitle) then --isn't level 
 					plateFrame.ActorTitleSpecial:Show()
@@ -6184,7 +5980,7 @@ end
 					
 					--npc name
 					plateFrame.ActorNameSpecial:Show()
-				elseif (plateFrame[QUEST_GIVER] or Plater.IsQuestObjective(plateFrame)) then
+				elseif (Plater.IsQuestObjective(plateFrame)) then
 					plateFrame.ActorNameSpecial:Show()
 				else
 					Plater._LogToVDT((plateFrame.ActorNameSpecial:GetText() or "??") .. " is not quest objective or giver or has subtitle (specific names) - hiding.", "Mariocki-PF")
@@ -6193,6 +5989,7 @@ end
 				end
 			end
 
+			-- ARP
 			plateFrame.CurrentUnitNameString = plateFrame.ActorNameSpecial
 			Plater.UpdateUnitName (plateFrame)
 
@@ -6544,28 +6341,6 @@ end
 		levelString:SetTextColor (color.r, color.g, color.b, Plater.db.profile.level_text_alpha)
 	end	
 
-	-- ARP
-	function Plater.UpdateQuestGiver(plateFrame)
-		if (not plateFrame.unitFrame.ExtraQuestMarker22154) then
-			plateFrame.unitFrame.ExtraQuestMarker22154 = plateFrame.unitFrame:CreateTexture (nil, "overlay")
-			local texture = plateFrame.unitFrame.ExtraQuestMarker22154
-			
-			texture:SetTexture ([[Interface\Addons\SharedMedia_MyMedia\background\Quest.tga]])
-			texture:SetSize (14, 14)
-			Plater.SetAnchor (texture, {
-				side = 6, --right side
-				x = 0,
-				y = 0
-			}, plateFrame.ActorNameSpecial)
-		end
-
-		if (plateFrame[QUEST_GIVER]) then
-            plateFrame.unitFrame.ExtraQuestMarker22154:Show()
-        else
-            plateFrame.unitFrame.ExtraQuestMarker22154:Hide()
-        end
-	end
-
 	-- ~updateplate ~update ~updatenameplate
 	function Plater.UpdatePlateFrame (plateFrame, actorType, forceUpdate, justAdded)
 		actorType = actorType or plateFrame.actorType
@@ -6601,9 +6376,6 @@ end
 		plateFrame.QuestInfo = {}
 		unitFrame.QuestInfo = {}
 		
-		-- ARP
-		plateFrame[QUEST_GIVER] = false
-
 		plateFrame.ActorNameSpecial:Hide()
 		plateFrame.ActorTitleSpecial:Hide()
 		plateFrame.Top3DFrame:Hide()
@@ -6673,8 +6445,6 @@ end
 				--these twoseettings make the healthing dummy show the healthbar
 --				Plater.db.profile.plate_config.friendlynpc.only_names = false
 --				Plater.db.profile.plate_config.friendlynpc.all_names = false
---				plateFrame [MEMBER_QUEST] = true
---				unitFrame [MEMBER_QUEST] = true
 				plateFrame.IsNpcWithoutHealthBar = true
 
 			elseif (DB_PLATE_CONFIG [actorType].only_names) then
@@ -6836,9 +6606,6 @@ end
 			plateFrame.unitFrame.WidgetContainer:SetScale(Plater.db.profile.widget_bar_scale)
 		end
 		
-		-- ARP
-		--Plater.UpdateQuestGiver(plateFrame)
-
 		--update the plate size for this unit
 		Plater.UpdatePlateSize (plateFrame)
 		
@@ -10453,7 +10220,7 @@ end
 	--import a string from any source with more options than the convencional importer
 	--this is used when importing scripts from the library and when the user inserted the wrong script type in the import box at hook or script, e.g. imported a hook in the script import box
 	--guarantee to always receive a 'print' type of encode
-	function Plater.ImportScriptString (text, ignoreRevision, overrideTriggers, showDebug)
+	function Plater.ImportScriptString (text, ignoreRevision, overrideTriggers, showDebug, keepExisting)
 		if (not text or type (text) ~= "string") then
 			return
 		end
@@ -10475,30 +10242,34 @@ end
 					local alreadyExists = false
 					local scriptDB = Plater.GetScriptDB (scriptType)
 					
-					for i = 1, #Plater.db.profile.script_data do
-						local scriptObject = scriptDB [i]
-						if (scriptObject.Name == scriptName) then
-							--the script already exists
-							if (not ignoreRevision) then
-								if (scriptObject.Revision >= newScript.Revision) then
-									if (showDebug) then
-										Plater:Msg ("Your version of this script is newer or is the same version.")
-										return false
+					if not keepExisting then
+						for i = 1, #scriptDB do
+							local scriptObject = scriptDB [i]
+							if (scriptObject.Name == scriptName) then
+								--the script already exists
+								if (not ignoreRevision) then
+									if (scriptObject.Revision >= newScript.Revision) then
+										if (showDebug) then
+											Plater:Msg ("Your version of this script is newer or is the same version.")
+											return false
+										end
 									end
 								end
-							end
-							
-							--add to the new script object, triggers that the current script has, since the user might have added some
-							if (not overrideTriggers) then
-								if (newScript.ScriptType == 0x1 or newScript.ScriptType == 0x2) then
-									--aura or cast trigger
-									for index, trigger in ipairs (scriptObject.SpellIds) do
-										DF.table.addunique (newScript.SpellIds, trigger)
-									end
-								else
-									--npc trigger
-									for index, trigger in ipairs (scriptObject.NpcNames) do
-										DF.table.addunique (newScript.SpellIds, trigger)
+								
+								--copy triggers that the current script has to the new script object since the user might have modified the list
+								if (not overrideTriggers) then
+									if (newScript.ScriptType == 0x1 or newScript.ScriptType == 0x2) then
+										--aura or cast trigger
+										newScript.SpellIds = {}
+										for index, trigger in ipairs (scriptObject.SpellIds) do
+											DF.table.addunique (newScript.SpellIds, trigger)
+										end
+									else
+										--npc trigger
+										newScript.NpcNames = {}
+										for index, trigger in ipairs (scriptObject.NpcNames) do
+											DF.table.addunique (newScript.NpcNames, trigger)
+										end
 									end
 								end
 								
@@ -10526,21 +10297,6 @@ end
 								alreadyExists = true
 								break
 							end
-							
-							--keep the enabled state
-							newScript.Enabled = scriptObject.Enabled
-							
-							--replace the old script with the new one
-							tremove (scriptDB, i)
-							tinsert (scriptDB, i, newScript)
-							objectAdded = newScript
-							
-							if (showDebug) then
-								Plater:Msg ("Script replaced by a newer one.")
-							end
-							
-							alreadyExists = true
-							break
 						end
 					end
 					
@@ -10558,15 +10314,17 @@ end
 					local alreadyExists = false
 					local scriptDB = Plater.GetScriptDB (scriptType)
 					
-					for i = 1, #Plater.db.profile.hook_data do
-						local scriptObject = scriptDB [i]
-						if (scriptObject.Name == scriptName) then
-							--the script already exists
-							if (not ignoreRevision) then
-								if (scriptObject.Revision >= newScript.Revision) then
-									if (showDebug) then
-										Plater:Msg ("Your version of this script is newer or is the same version.")
-										return false
+					if not keepExisting then
+						for i = 1, #scriptDB do
+							local scriptObject = scriptDB [i]
+							if (scriptObject.Name == scriptName) then
+								--the script already exists
+								if (not ignoreRevision) then
+									if (scriptObject.Revision >= newScript.Revision) then
+										if (showDebug) then
+											Plater:Msg ("Your version of this script is newer or is the same version.")
+											return false
+										end
 									end
 								end
 								
@@ -10595,21 +10353,6 @@ end
 								alreadyExists = true
 								break
 							end
-							
-							--keep the enabled state
-							newScript.Enabled = scriptObject.Enabled
-							
-							--replace the old script with the new one
-							tremove (scriptDB, i)
-							tinsert (scriptDB, i, newScript)
-							objectAdded = newScript
-							
-							if (showDebug) then
-								Plater:Msg ("Script replaced by a newer one.")
-							end
-							
-							alreadyExists = true
-							break
 						end
 					end
 					
