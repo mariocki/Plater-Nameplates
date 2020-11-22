@@ -233,7 +233,7 @@ PLATER_DEFAULT_SETTINGS = {
 				big_actortitle_text_size = 11,
 				big_actortitle_text_font = "Arial Narrow",
 				big_actortitle_text_color = {1, .8, .0},
-				big_actortitle_text_outline = "NONE",
+				big_actortitle_text_outline = "OUTLINE",
 				big_actortitle_text_shadow_color = {0, 0, 0, 1},
 				big_actortitle_text_shadow_color_offset = {1, -1},
 				

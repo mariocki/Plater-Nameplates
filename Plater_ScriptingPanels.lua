@@ -677,7 +677,7 @@ end
 				GameCooltip:AddIcon ([[Interface\AddOns\Plater\images\wagologo.tga]], 1, 1, 16, 10)
 				
 			else
-				GameCooltip:AddLine ("url found", "", 1, "gray")
+				GameCooltip:AddLine ("no wago.io url found", "", 1, "gray")
 			end
 
 			GameCooltip:SetOption("SubFollowButton", true)
@@ -2518,53 +2518,7 @@ function Plater.CreateHookingPanel()
 	
 		local text = hookFrame.ImportTextEditor:GetText()
 
-		--cleanup the text removing extra spaces and break lines
-		text = DF:Trim (text)
-		
-		if (string.len (text) > 0) then
-		
-			local indexScriptTable = Plater.DecompressData (text, "print")
-
-			if (indexScriptTable and type (indexScriptTable) == "table") then
-			
-				local scriptType = Plater.GetDecodedScriptType (indexScriptTable)
-				if (scriptType ~= "hook") then
-					--the user inserted a string for a script into the hook import
-					--call the external function to import this script with ignoreRevision, overrideExisting and showDebug
-					local importSuccess, newObject = Plater.ImportScriptString (text, true, true, true)
-					if (importSuccess) then
-						PlaterOptionsPanelContainer:SelectIndex (Plater, PLATER_OPTIONS_SCRIPTING_TAB)
-						local mainFrame = PlaterOptionsPanelContainer
-						local scriptingFrame = mainFrame.AllFrames [PLATER_OPTIONS_SCRIPTING_TAB]
-						scriptingFrame.EditScript (newObject)
-						scriptingFrame.ScriptSelectionScrollBox:Refresh()
-					end
-					
-					hookFrame.ImportTextEditor.IsImporting = nil
-					hookFrame.ImportTextEditor:Hide()
-					
-					return
-				end
-				
-				local newScript = Plater.BuildScriptObjectFromIndexTable (indexScriptTable, "hook")
-				if (newScript) then
-					tinsert (Plater.db.profile.hook_data, newScript)
-					hookFrame.ScriptSelectionScrollBox:Refresh()
-					hookFrame.EditScript (#Plater.db.profile.hook_data)
-					--refresh the script selection scrollbox
-					hookFrame.ScriptSelectionScrollBox:Refresh()
-				else
-					--check if the user in importing a profile in the scripting tab
-					if (indexScriptTable.plate_config) then
-						DF:ShowErrorMessage ("Invalid Script or Mod.\n\nImport profiles at the Profiles tab.")
-					end
-					Plater:Msg ("Cannot import: data imported is invalid")
-				end
-			else
-				Plater:Msg ("Cannot import: data imported is invalid")
-			end
-
-		end
+		import_mod_or_script (text)
 		
 		hookFrame.ImportTextEditor.IsImporting = nil
 		hookFrame.ImportTextEditor:Hide()
@@ -3783,48 +3737,7 @@ function Plater.CreateScriptingPanel()
 	
 		local text = scriptingFrame.ImportTextEditor:GetText()
 
-		--cleanup the text removing extra spaces and break lines
-		text = DF:Trim (text)
-		
-		if (string.len (text) > 0) then
-		
-			local indexScriptTable = Plater.DecompressData (text, "print")
-			
-			if (indexScriptTable and type (indexScriptTable) == "table") then
-			
-				local scriptType = Plater.GetDecodedScriptType (indexScriptTable)
-				if (scriptType ~= "script") then
-					--the user inserted a string for a hook into the script import
-					--call the external function to import this script with ignoreRevision, overrideExisting and showDebug
-					local importSuccess, newObject = Plater.ImportScriptString (text, true, true, true)
-					if (importSuccess) then
-						PlaterOptionsPanelContainer:SelectIndex (Plater, PLATER_OPTIONS_HOOKING_TAB)
-						local mainFrame = PlaterOptionsPanelContainer
-						local hookFrame = mainFrame.AllFrames [PLATER_OPTIONS_HOOKING_TAB]
-						hookFrame.EditScript (newObject)
-						hookFrame.ScriptSelectionScrollBox:Refresh()
-					end
-					
-					scriptingFrame.ImportTextEditor.IsImporting = nil
-					scriptingFrame.ImportTextEditor:Hide()
-					
-					return
-				end
-			
-				local newScript = Plater.BuildScriptObjectFromIndexTable (indexScriptTable, "script")
-				if (newScript) then
-					tinsert (Plater.db.profile.script_data, newScript)
-					scriptingFrame.ScriptSelectionScrollBox:Refresh()
-					scriptingFrame.EditScript (#Plater.db.profile.script_data)
-					--refresh the script selection scrollbox
-					scriptingFrame.ScriptSelectionScrollBox:Refresh()
-				else
-					Plater:Msg ("Cannot import: data imported is invalid")
-				end
-			else
-				Plater:Msg ("Cannot import: data imported is invalid")
-			end
-		end
+		import_mod_or_script (text)
 		
 		scriptingFrame.ImportTextEditor.IsImporting = nil
 		scriptingFrame.ImportTextEditor:Hide()
