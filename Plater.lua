@@ -5775,14 +5775,6 @@ end
 			if (plateFrame.playerGuildName) then
 				if (plateConfigs.show_guild_name) then
 					Plater.AddGuildNameToPlayerName (plateFrame)
-					-- ARP only show if guildie
-					if (plateFrame.playerGuildName ~= "" and plateFrame.playerGuildName == Plater.playerGuild) then
-						nameFontString:Show()
-						plateFrame.unitFrame:Show()
-					else
-						plateFrame.unitFrame:Hide()
-					end
-					-- ARP END
 				end
 			end
 			
@@ -5795,14 +5787,14 @@ end
 				--is a guild friend?
 				DF:SetFontColor (nameFontString, unpack(Plater.db.profile.plate_config [ACTORTYPE_FRIENDLY_PLAYER].actorname_guild_color))
 				plateFrame.isFriend = true
-				
+				plateFrame.unitFrame:Show() -- ARP force show
 			elseif (Plater.db.profile.plate_config [ACTORTYPE_FRIENDLY_PLAYER].actorname_use_friends_color and Plater.FriendsCache [plateFrame [MEMBER_NAME]]) then
 				--is regular friend
 				DF:SetFontColor (nameFontString, unpack(Plater.db.profile.plate_config [ACTORTYPE_FRIENDLY_PLAYER].actorname_friend_color))
 				--DF:SetFontOutline (nameFontString, plateConfigs.actorname_text_shadow)
 				Plater.SetFontOutlineAndShadow (nameFontString, plateConfigs.actorname_text_outline, plateConfigs.actorname_text_shadow_color, plateConfigs.actorname_text_shadow_color_offset[1], plateConfigs.actorname_text_shadow_color_offset[2])
 				plateFrame.isFriend = true
-				
+				plateFrame.unitFrame:Show() -- ARP force show
 			else
 				--isn't friend, check if is showing only the name and if is showing class colors
 				if (Plater.db.profile.plate_config [ACTORTYPE_FRIENDLY_PLAYER].actorname_use_class_color) then
@@ -5818,6 +5810,7 @@ end
 				end
 
 				plateFrame.isFriend = nil
+				plateFrame.unitFrame:Hide()  -- ARP If not guildie or friend then dont show 
 			end
 			
 			return
@@ -5883,7 +5876,7 @@ end
 						Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_outline, plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
 					else
 						plateFrame.ActorTitleSpecial:Hide()
-						-- ARP
+						-- ARP don't even show Neutral names
 						if (plateFrame [MEMBER_REACTION] == UNITREACTION_NEUTRAL) then
 							plateFrame.unitFrame:Hide()
 						end
@@ -5954,7 +5947,7 @@ end
 					--DF:SetFontOutline (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_shadow)
 					Plater.SetFontOutlineAndShadow (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_outline, plateConfigs.big_actorname_text_shadow_color, plateConfigs.big_actorname_text_shadow_color_offset[1], plateConfigs.big_actorname_text_shadow_color_offset[2])
 				else
-					-- ARP
+					-- ARP - no sub title then dont show
 					plateFrame.unitFrame:Hide()
 				end
 
@@ -7455,10 +7448,11 @@ end
 		[32638] = true, --Hakmud of Argus
 		[32639] = true, --Gnimo
 		[35642] = true, --Jeeves
-		[101527] = true, --Blingtron 6000
 		[32641] = true, --Drix Blackwrench
 		[32642] = true, --Mojodishu
 		[143262] = true, --Captain (bird)
+		[142668] = true, --Merchant Maku
+		[142666] = true, --Collector Unta
 	}
 
 	function Plater.IsNpcInIgnoreList (plateFrame, onlyProfession) --private
