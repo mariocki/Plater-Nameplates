@@ -859,14 +859,6 @@ Plater.DefaultSpellRangeListF = {
 		
 		Plater.ActorTypeSettingsCache.RefreshID = PLATER_REFRESH_ID
 	end
-	
-	-- ARP
-	function Plater._LogToVDT(logMessage, tag)
-		if (ViragDevTool_AddData) then
-			ViragDevTool_AddData(logMessage, tag)
-		end
-	end
-	
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --> character specific abilities and spells ~spells
@@ -5841,13 +5833,8 @@ end
 			PixelUtil.SetPoint (plateFrame.ActorNameSpecial, "center", plateFrame.unitFrame, "center", 0, 10)
 			PixelUtil.SetPoint (plateFrame.ActorTitleSpecial, "top", plateFrame.ActorNameSpecial, "bottom", 0, -2)
 
-			-- ARP
-			local subTitle = Plater.GetActorSubName (plateFrame)
-			local isValidSubtitle = subTitle and subTitle ~= ""and not subTitle:match ("%d")
-
 			--there's two ways of showing this for friendly npcs (selected from the options panel): show all names or only npcs with profession names
 			--enemy npcs always show all
-			--Plater._LogToVDT("plateConfigs.all_names: " .. tostring(plateConfigs.all_names), "Mariocki")
 			if (plateConfigs.all_names) then
 				plateFrame.ActorNameSpecial:Show()
 				plateFrame.CurrentUnitNameString = plateFrame.ActorNameSpecial
@@ -5892,19 +5879,25 @@ end
 						DF:SetFontSize (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_size)
 						DF:SetFontFace (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_font)
 
-						-- ARP
-						if (plateFrame[MEMBER_REACTION] == UNITREACTION_NEUTRAL) then
-							Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, "NONE", plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
-						else
-							Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_outline, plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
-						end
+						Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_outline, plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
 					else
 						plateFrame.ActorTitleSpecial:Hide()
+						-- ARP
+						if (plateFrame [MEMBER_REACTION] == UNITREACTION_NEUTRAL) then
+							plateFrame.unitFrame:Hide()
+						end
 					end
 					
 				else
 					--it's a friendly npc
-					plateFrame.ActorNameSpecial:SetTextColor (unpack (plateConfigs.big_actorname_text_color))
+					-- ARP
+					if (plateFrame [MEMBER_QUEST]) then
+						r, g, b, a = unpack (plateConfigs.quest_color)
+					else
+						r, g, b, a = unpack (plateConfigs.big_actorname_text_color)
+					end
+					plateFrame.ActorNameSpecial:SetTextColor (r, g, b, a)
+
 					DF:SetFontFace (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_font)
 					
 					Plater.SetFontOutlineAndShadow (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_outline, plateConfigs.big_actorname_text_shadow_color, plateConfigs.big_actorname_text_shadow_color_offset[1], plateConfigs.big_actorname_text_shadow_color_offset[2])
@@ -5930,67 +5923,47 @@ end
 			else
 				--scan tooltip to check if there's an title for this npc
 				local subTitle = Plater.GetActorSubName (plateFrame)
-				if (subTitle and subTitle ~= "" and not Plater.IsNpcInIgnoreList (plateFrame, true)) then
-					if (not subTitle:match (string.gsub(UNIT_LEVEL_TEMPLATE, "%%d", "(%.*)"))) then --isn't level
-
-						plateFrame.ActorTitleSpecial:Show()
-						--subTitle = DF:RemoveRealmName (subTitle)
-						plateFrame.ActorTitleSpecial:SetText ("<" .. subTitle .. ">")
-						plateFrame.ActorTitleSpecial:ClearAllPoints()
-						PixelUtil.SetPoint (plateFrame.ActorTitleSpecial, "top", plateFrame.ActorNameSpecial, "bottom", 0, -2)
-						
-						plateFrame.ActorTitleSpecial:SetTextColor (unpack (plateConfigs.big_actortitle_text_color))
-						plateFrame.ActorNameSpecial:SetTextColor (unpack (plateConfigs.big_actorname_text_color))
-						
-						DF:SetFontSize (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_size)
-						DF:SetFontFace (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_font)
-						
-						--DF:SetFontOutline (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_shadow)
-						Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_outline, plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
-						
-						--npc name
-						plateFrame.ActorNameSpecial:Show()
-						plateFrame.ActorNameSpecial:SetTextColor (unpack (plateConfigs.big_actorname_text_color))
-
-						plateFrame.CurrentUnitNameString = plateFrame.ActorNameSpecial
-						Plater.UpdateUnitName (plateFrame)
-
-						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size)
-						DF:SetFontFace (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_font)
-						
-						--DF:SetFontOutline (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_shadow)
-						Plater.SetFontOutlineAndShadow (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_outline, plateConfigs.big_actorname_text_shadow_color, plateConfigs.big_actorname_text_shadow_color_offset[1], plateConfigs.big_actorname_text_shadow_color_offset[2])
-					end
-				end
-
-				-- ARP
-				--scan tooltip to check if there's an title for this npc
-				if (isValidSubtitle) then --isn't level 
+				if (subTitle and subTitle ~= "" and not subTitle:match (string.gsub(UNIT_LEVEL_TEMPLATE, "%%d", "(%.*)"))) then
 					plateFrame.ActorTitleSpecial:Show()
-					subTitle = DF:RemoveRealmName (subTitle)
+					--subTitle = DF:RemoveRealmName (subTitle)
 					plateFrame.ActorTitleSpecial:SetText ("<" .. subTitle .. ">")
 					plateFrame.ActorTitleSpecial:ClearAllPoints()
 					PixelUtil.SetPoint (plateFrame.ActorTitleSpecial, "top", plateFrame.ActorNameSpecial, "bottom", 0, -2)
 					
 					plateFrame.ActorTitleSpecial:SetTextColor (unpack (plateConfigs.big_actortitle_text_color))
+					plateFrame.ActorNameSpecial:SetTextColor (unpack (plateConfigs.big_actorname_text_color))
+					
 					DF:SetFontSize (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_size)
 					DF:SetFontFace (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_font)
-
-					Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_outline, plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
 					
+					--DF:SetFontOutline (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_shadow)
+					Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_outline, plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
+
 					--npc name
 					plateFrame.ActorNameSpecial:Show()
-				elseif (Plater.IsQuestObjective(plateFrame)) then
+					plateFrame.ActorNameSpecial:SetTextColor (unpack (plateConfigs.big_actorname_text_color))
+
+					plateFrame.CurrentUnitNameString = plateFrame.ActorNameSpecial
+					Plater.UpdateUnitName (plateFrame)
+
+					DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size)
+					DF:SetFontFace (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_font)
+					
+					--DF:SetFontOutline (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_shadow)
+					Plater.SetFontOutlineAndShadow (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_outline, plateConfigs.big_actorname_text_shadow_color, plateConfigs.big_actorname_text_shadow_color_offset[1], plateConfigs.big_actorname_text_shadow_color_offset[2])
+				else
+					plateFrame.ActorTitleSpecial:Hide()
+					plateFrame.ActorNameSpecial:Hide()
+				end
+
+				if (Plater.IsQuestObjective(plateFrame)) then
 					plateFrame.ActorNameSpecial:Show()
 				else
-					Plater._LogToVDT((plateFrame.ActorNameSpecial:GetText() or "??") .. " is not quest objective or giver or has subtitle (specific names) - hiding.", "Mariocki-PF")
 					plateFrame.ActorTitleSpecial:Hide()
 					plateFrame.ActorNameSpecial:Hide()
 				end
 			end
 
-			-- ARP
-			plateFrame.CurrentUnitNameString = plateFrame.ActorNameSpecial
 			Plater.UpdateUnitName (plateFrame)
 
 			return
