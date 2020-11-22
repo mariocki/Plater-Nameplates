@@ -5759,16 +5759,7 @@ end
 			--when the option to show only the player name is enabled
 			--special string to show the player name
 			local nameFontString = plateFrame.ActorNameSpecial
-			-- ARP Hide players
-			if (UnitIsPlayer(plateFrame.unitFrame.unit)) then
-				if (plateFrame.playerGuildName) then
-					if (plateFrame.playerGuildName == Plater.playerGuild) then
-						nameFontString:Show()
-						plateFrame.unitFrame:Show()
-					end
-				end
-			end
-			-- ARP END
+			nameFontString:Show()
 
 			--set the name in the string
 			plateFrame.CurrentUnitNameString = nameFontString
@@ -5784,6 +5775,14 @@ end
 			if (plateFrame.playerGuildName) then
 				if (plateConfigs.show_guild_name) then
 					Plater.AddGuildNameToPlayerName (plateFrame)
+					-- ARP only show if guildie
+					if (plateFrame.playerGuildName ~= "" and plateFrame.playerGuildName == Plater.playerGuild) then
+						nameFontString:Show()
+						plateFrame.unitFrame:Show()
+					else
+						plateFrame.unitFrame:Hide()
+					end
+					-- ARP END
 				end
 			end
 			
