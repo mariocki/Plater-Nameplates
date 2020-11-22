@@ -5816,7 +5816,7 @@ end
 			return
 
 		elseif (plateFrame.IsNpcWithoutHealthBar) then --not critical code
-		
+			
 			--reset points for special units
 			plateFrame.ActorNameSpecial:ClearAllPoints()
 			plateFrame.ActorTitleSpecial:ClearAllPoints()
@@ -5885,11 +5885,20 @@ end
 					
 				else
 					--it's a friendly npc
-					-- ARP
-					if (plateFrame [MEMBER_QUEST]) then
-						r, g, b, a = unpack (plateConfigs.quest_color)
+					-- ARP begin
+					local _allTheThings = AllTheThings
+					if _allTheThings and plateFrame and plateFrame [MEMBER_NPCID] then
+						if _allTheThings:GetQuestsForNPC(plateFrame [MEMBER_NPCID]) == true then
+							r, g, b, a = unpack (plateConfigs.quest_color)
+						else
+							r, g, b, a = unpack (plateConfigs.big_actorname_text_color)
+						end
 					else
-						r, g, b, a = unpack (plateConfigs.big_actorname_text_color)
+						if (plateFrame [MEMBER_QUEST]) then
+							r, g, b, a = unpack (plateConfigs.quest_color)
+						else
+							r, g, b, a = unpack (plateConfigs.big_actorname_text_color)
+						end
 					end
 					plateFrame.ActorNameSpecial:SetTextColor (r, g, b, a)
 					-- ARP END
@@ -5928,7 +5937,24 @@ end
 					PixelUtil.SetPoint (plateFrame.ActorTitleSpecial, "top", plateFrame.ActorNameSpecial, "bottom", 0, -2)
 					
 					plateFrame.ActorTitleSpecial:SetTextColor (unpack (plateConfigs.big_actortitle_text_color))
-					plateFrame.ActorNameSpecial:SetTextColor (unpack (plateConfigs.big_actorname_text_color))
+
+					-- ARP begin
+					local _allTheThings = AllTheThings
+					if _allTheThings and plateFrame and plateFrame [MEMBER_NPCID] then
+						if _allTheThings:GetQuestsForNPC(plateFrame [MEMBER_NPCID]) == true then
+							r, g, b, a = unpack (plateConfigs.quest_color)
+						else
+							r, g, b, a = unpack (plateConfigs.big_actorname_text_color)
+						end
+					else
+						if (plateFrame [MEMBER_QUEST]) then
+							r, g, b, a = unpack (plateConfigs.quest_color)
+						else
+							r, g, b, a = unpack (plateConfigs.big_actorname_text_color)
+						end
+					end
+					plateFrame.ActorNameSpecial:SetTextColor (r, g, b, a)
+					-- ARP END
 					
 					DF:SetFontSize (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_size)
 					DF:SetFontFace (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_font)
@@ -6403,7 +6429,7 @@ end
 				end
 			
 			elseif (IS_IN_OPEN_WORLD and DB_PLATE_CONFIG [actorType].quest_enabled and Plater.IsQuestObjective (plateFrame)) then
-				Plater.ChangeHealthBarColor_Internal (healthBar, unpack (DB_PLATE_CONFIG [actorType].quest_color))
+				Plater.ChangeHealthBarColor_Internal (healthBar, unpack (DB_PLATE_CONFIG [actorType].quest_color)) -- ARP
 
 				healthBar:Show()
 				buffFrame:Show()
