@@ -5764,14 +5764,9 @@ end
 				if (plateFrame.playerGuildName) then
 					if (plateFrame.playerGuildName == Plater.playerGuild) then
 						nameFontString:Show()
-					else
-						nameFontString:Hide()
+						plateFrame.unitFrame:Show()
 					end
-				else
-					nameFontString:Hide()
 				end
-			else
-				nameFontString:Show()
 			end
 			-- ARP END
 
@@ -5874,7 +5869,7 @@ end
 					
 					--npc title
 					local subTitle = Plater.GetActorSubName (plateFrame)
-					if (subTitle and subTitle ~= "" and not subTitle:match (string.gsub(UNIT_LEVEL_TEMPLATE, "%%d", "(%.*)"))) then
+					if (subTitle and subTitle ~= "" and not subTitle:match (string.gsub(UNIT_LEVEL_TEMPLATE, "%%d", "(%.*)")) and not Plater.IsNpcInIgnoreList (plateFrame, true)) then
 						plateFrame.ActorTitleSpecial:Show()
 						--subTitle = DF:RemoveRealmName (subTitle) -- why are removing real names on npc titles? e.g. <T-Shirt Scalper> Skin-Me-Own-Coat-Dibblefur gets broken to <T>.
 						plateFrame.ActorTitleSpecial:SetText ("<" .. subTitle .. ">")
@@ -5915,7 +5910,7 @@ end
 					
 					--profession (title)
 					local subTitle = Plater.GetActorSubName (plateFrame)
-					if (subTitle and subTitle ~= "" and not subTitle:match (string.gsub(UNIT_LEVEL_TEMPLATE, "%%d", "(%.*)"))) then
+					if (subTitle and subTitle ~= "" and not subTitle:match (string.gsub(UNIT_LEVEL_TEMPLATE, "%%d", "(%.*)")) and not Plater.IsNpcInIgnoreList (plateFrame, true)) then
 						plateFrame.ActorTitleSpecial:Show()
 						--subTitle = DF:RemoveRealmName (subTitle)
 						plateFrame.ActorTitleSpecial:SetText ("<" .. subTitle .. ">")
@@ -5927,15 +5922,12 @@ end
 						DF:SetFontFace (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_font)
 
 						Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_outline, plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
-					else
-						-- ARP 
-						plateFrame.ActorTitleSpecial:Hide()
 					end
 				end
 			else
 				--scan tooltip to check if there's an title for this npc
 				local subTitle = Plater.GetActorSubName (plateFrame)
-				if (subTitle and subTitle ~= "" and not subTitle:match (string.gsub(UNIT_LEVEL_TEMPLATE, "%%d", "(%.*)"))) then
+				if (subTitle and subTitle ~= "" and not subTitle:match (string.gsub(UNIT_LEVEL_TEMPLATE, "%%d", "(%.*)")) and not Plater.IsNpcInIgnoreList (plateFrame, true)) then
 					plateFrame.ActorTitleSpecial:Show()
 					--subTitle = DF:RemoveRealmName (subTitle)
 					plateFrame.ActorTitleSpecial:SetText ("<" .. subTitle .. ">")
@@ -5964,16 +5956,14 @@ end
 					Plater.SetFontOutlineAndShadow (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_outline, plateConfigs.big_actorname_text_shadow_color, plateConfigs.big_actorname_text_shadow_color_offset[1], plateConfigs.big_actorname_text_shadow_color_offset[2])
 				else
 					-- ARP
-					plateFrame.ActorTitleSpecial:Hide()
-					plateFrame.ActorNameSpecial:Hide()
+					plateFrame.unitFrame:Hide()
 				end
 
 				-- ARP BEGIN
-				if (Plater.IsQuestObjective(plateFrame)) then
+				if (plateFrame [MEMBER_QUEST]) then
+					r, g, b, a = unpack (plateConfigs.quest_color)
 					plateFrame.ActorNameSpecial:Show()
-				else
-					plateFrame.ActorTitleSpecial:Hide()
-					plateFrame.ActorNameSpecial:Hide()
+					plateFrame.ActorNameSpecial:SetTextColor (r, g, b, a)
 				end
 				-- ARP END
 			end
