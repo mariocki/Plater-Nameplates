@@ -81,6 +81,10 @@ local Plater = DF:CreateAddOn ("Plater", "PlaterDB", PLATER_DEFAULT_SETTINGS, { 
 		
 	}
 })
+
+-- ARP
+Plater.playerGuild = select(1, GetGuildInfo("player")) or ""
+
 Plater.versionString = GetAddOnMetadata("Plater_dev", "Version") or GetAddOnMetadata("Plater", "Version")
 Plater.fullVersionInfo = Plater.versionString .. " - DetailsFramework v" .. select(2,LibStub:GetLibrary("DetailsFramework-1.0"))
 function Plater.GetVersionInfo(printOut)
@@ -118,7 +122,7 @@ Plater.CanOverride_Functions = {
 	RefreshDBUpvalues = true, --refresh cache
 	RefreshDBLists = true, --refresh cache
 	UpdateAuraCache = true, --refresh cache
-	
+
 	CreateShowAuraIconAnimation = true, --creates the animation for aura icons played when they are shown
 	GetHealthCutoffValue = true, --check if the character has a execute range and enable or disable the health cut off indicators
 	CheckRange = true, --check if the player is in range of the unit
@@ -142,11 +146,11 @@ Plater.CanOverride_Functions = {
 	UpdateAuras_Manual = true, --start an aura refresh for manual aura tracking
 	UpdateAuras_Automatic = true, --start an aura refresh for automatic aura tracking
 	UpdateAuras_Self_Automatic = true, --start an aura refresh on the personal bar nameplate
-	
+
 	ColorOverrider = true, --control which color que nameplate will have when the Override Default Colors are enabled
 	FindAndSetNameplateColor = true, --Plater tries to find a color for the nameplate
 	SetTextColorByClass = true, --adds the class color into a text with scape sequence
-	
+
 	UpdatePlateSize = true, --control the size of health, cast, power bars
 	SetPlateBackground = true, --set the backdrop when showing the nameplate area
 	UpdateNameplateThread = true, --change the nameplate color based on threat
@@ -168,7 +172,7 @@ Plater.CanOverride_Functions = {
 	EnableHighlight = true, --enable the highlight check
 	DisableHighlight = true, --disable the highlight check
 	GetUnitType = true, --return if an unit is a pet, minor or regular
-	
+
 	AnimateLeftWithAccel = true, --move the health bar to left when health animation is enabled
 	AnimateRightWithAccel = true, --move the health bar to right when health animation is enabled
 	IsQuestObjective = true, --check if the npc from the nameplate is a quest mob
@@ -194,9 +198,9 @@ Plater.CanOverride_Members = {
 	SpellForRangeCheck = true, --spell name used for range check
 	PlayerGUID = true, --store the GUID of the player
 	PlayerClass = true, --store the name for the player (non localized)
-	
-	
-	
+
+
+
 }
 
 --> types of codes for each script in the Scripting tab (do not change these inside scripts)
@@ -830,7 +834,7 @@ Plater.DefaultSpellRangeListF = {
 	
 	--store quests the player is in
 	Plater.QuestCache = {}
-	
+
 	--cache the profile settings for each actor type on this table, so scripts can have access to profile
 	Plater.ActorTypeSettingsCache = { --private
 		RefreshID = -1,
@@ -858,7 +862,7 @@ Plater.DefaultSpellRangeListF = {
 		
 		Plater.ActorTypeSettingsCache.RefreshID = PLATER_REFRESH_ID
 	end
-	
+
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --> character specific abilities and spells ~spells
 
@@ -1056,6 +1060,32 @@ Plater.DefaultSpellRangeListF = {
 		local powerBar = unitFrame.powerBar
 		local buffFrame1 = unitFrame.BuffFrame
 		local buffFrame2 = unitFrame.BuffFrame2		
+
+		-- ARP BEGIN
+		if (plateFrame [MEMBER_REACTION] >= 5) then
+			if (plateFrame.ActorTitleSpecial and plateFrame.ActorTitleSpecial:GetText() ~= '' and plateFrame.ActorTitleSpecial:GetText() ~= nil) then
+				plateFrame.unitFrame:SetAlpha (inRangeAlpha * 0.66)
+				plateFrame.ActorNameSpecial:SetAlpha(inRangeAlpha * 0.66)
+				plateFrame.ActorTitleSpecial:SetAlpha(inRangeAlpha * 0.66)
+			else
+				plateFrame.unitFrame:SetAlpha (inRangeAlpha * 0.33)
+				plateFrame.ActorNameSpecial:SetAlpha(inRangeAlpha * 0.33)
+				plateFrame.ActorTitleSpecial:SetAlpha(inRangeAlpha * 0.33)
+			end
+			plateFrame [MEMBER_RANGE] = false
+			plateFrame.unitFrame [MEMBER_RANGE] = false
+			return
+		end
+
+		if (plateFrame.IsNpcWithoutHealthBar) then
+			plateFrame.unitFrame:SetAlpha (inRangeAlpha * 0.33)
+			plateFrame.ActorNameSpecial:SetAlpha(inRangeAlpha * 0.33)
+			plateFrame.ActorTitleSpecial:SetAlpha(inRangeAlpha * 0.33)
+			plateFrame [MEMBER_RANGE] = false
+			plateFrame.unitFrame [MEMBER_RANGE] = false
+			return
+		end
+		-- ARP END
 
 		--if "units which is not target" is enabled and the player is targetting something else than the player it self
 		if (DB_USE_NON_TARGETS_ALPHA and (DB_USE_FOCUS_TARGET_ALPHA or Plater.PlayerHasTargetNonSelf)) then
@@ -2267,7 +2297,7 @@ Plater.DefaultSpellRangeListF = {
 			
 			IS_IN_OPEN_WORLD = Plater.ZoneInstanceType == "none"
 			IS_IN_INSTANCE = Plater.ZoneInstanceType == "raid" or Plater.ZoneInstanceType == "party"
-			
+
 			Plater.UpdateAllPlates()
 			Plater.RefreshAutoToggle()
 			
@@ -2324,7 +2354,7 @@ Plater.DefaultSpellRangeListF = {
 
 			--create the frame to hold the plater resoruce bar
 			Plater.CreatePlaterResourceFrame() --~resource
-			
+
 			--run hooks on load screen
 			if (HOOK_LOAD_SCREEN.ScriptAmount > 0) then
 				Plater.PlayerEnteringWorld = true
@@ -2348,7 +2378,7 @@ Plater.DefaultSpellRangeListF = {
 			end
 			Plater.UpdateAllPlates (true)
 		end,
-		
+
 		--~created ~events ~oncreated 
 		NAME_PLATE_CREATED = function (event, plateFrame)
 			--ViragDevTool_AddData({ctime = GetTime(), unit = plateFrame [MEMBER_UNITID] or "nil", stack = debugstack()}, "NAME_PLATE_CREATED - " .. (plateFrame [MEMBER_UNITID] or "nil"))
@@ -2884,7 +2914,7 @@ Plater.DefaultSpellRangeListF = {
 --			if (select (2, UnitClass (unitBarId)) == "HUNTER") then
 --				print ("nameplate added", UnitName (unitBarId))
 --			end
-		
+
 			local plateFrame = C_NamePlate.GetNamePlateForUnit (unitBarId)
 			if (not plateFrame) then
 				return
@@ -5426,6 +5456,16 @@ end
 		end
 	end	
 	
+	-- ARP BEGIN
+	function Plater.SetFocusTexture(unitFrame)
+		local profile = Plater.db.profile
+		local texture = LibSharedMedia:Fetch ("statusbar", profile.health_selection_overlay)
+		unitFrame.targetOverlayTexture:SetTexture (texture)
+		unitFrame.targetOverlayTexture:SetAlpha (0.5)
+		unitFrame.targetOverlayTexture:Show()
+	end
+	-- ARP END
+
 	-- ~target
 	function Plater.UpdateTarget (plateFrame) --private
 
@@ -5673,7 +5713,7 @@ end
 	-- update all texts in the nameplate, settings can variate from different unit types
 	-- needReset is true when the previous unit type shown on this place is different from the current unit
 	function Plater.UpdatePlateText (plateFrame, plateConfigs, needReset) --private
-	
+
 		-- ensure castBar updates are done, as this needs to be done for all types of plates...
 		local spellnameString = plateFrame.unitFrame.castBar.Text
 		local spellPercentString = plateFrame.unitFrame.castBar.percentText
@@ -5719,8 +5759,22 @@ end
 			--when the option to show only the player name is enabled
 			--special string to show the player name
 			local nameFontString = plateFrame.ActorNameSpecial
-			nameFontString:Show()
-			
+			-- ARP Hide players
+			if (UnitIsPlayer(plateFrame.unitFrame.unit)) then
+				if (plateFrame.playerGuildName) then
+					if (plateFrame.playerGuildName == Plater.playerGuild) then
+						nameFontString:Show()
+					else
+						nameFontString:Hide()
+					end
+				else
+					nameFontString:Hide()
+				end
+			else
+				nameFontString:Show()
+			end
+			-- ARP END
+
 			--set the name in the string
 			plateFrame.CurrentUnitNameString = nameFontString
 			Plater.UpdateUnitName (plateFrame)
@@ -5773,9 +5827,9 @@ end
 			end
 			
 			return
-		
+
 		elseif (plateFrame.IsNpcWithoutHealthBar) then --not critical code
-		
+			
 			--reset points for special units
 			plateFrame.ActorNameSpecial:ClearAllPoints()
 			plateFrame.ActorTitleSpecial:ClearAllPoints()
@@ -5830,16 +5884,29 @@ end
 						plateFrame.ActorTitleSpecial:SetTextColor (r, g, b, a)
 						DF:SetFontSize (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_size)
 						DF:SetFontFace (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_font)
-						
+
 						--DF:SetFontOutline (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_shadow)
 						Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_outline, plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
 					else
 						plateFrame.ActorTitleSpecial:Hide()
+						-- ARP
+						if (plateFrame [MEMBER_REACTION] == UNITREACTION_NEUTRAL) then
+							plateFrame.unitFrame:Hide()
+						end
+						-- ARP END
 					end
 					
 				else
 					--it's a friendly npc
-					plateFrame.ActorNameSpecial:SetTextColor (unpack (plateConfigs.big_actorname_text_color))
+					-- ARP
+					if (plateFrame [MEMBER_QUEST]) then
+						r, g, b, a = unpack (plateConfigs.quest_color)
+					else
+						r, g, b, a = unpack (plateConfigs.big_actorname_text_color)
+					end
+					plateFrame.ActorNameSpecial:SetTextColor (r, g, b, a)
+					-- ARP END
+
 					DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size)
 					DF:SetFontFace (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_font)
 					
@@ -5858,47 +5925,59 @@ end
 						plateFrame.ActorTitleSpecial:SetTextColor (unpack (plateConfigs.big_actortitle_text_color))
 						DF:SetFontSize (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_size)
 						DF:SetFontFace (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_font)
-						
-						--DF:SetFontOutline (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_shadow)
+
 						Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_outline, plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
+					else
+						-- ARP 
+						plateFrame.ActorTitleSpecial:Hide()
 					end
 				end
 			else
 				--scan tooltip to check if there's an title for this npc
 				local subTitle = Plater.GetActorSubName (plateFrame)
-				if (subTitle and subTitle ~= "" and not Plater.IsNpcInIgnoreList (plateFrame, true)) then
-					if (not subTitle:match (string.gsub(UNIT_LEVEL_TEMPLATE, "%%d", "(%.*)"))) then --isn't level
+				if (subTitle and subTitle ~= "" and not subTitle:match (string.gsub(UNIT_LEVEL_TEMPLATE, "%%d", "(%.*)"))) then
+					plateFrame.ActorTitleSpecial:Show()
+					--subTitle = DF:RemoveRealmName (subTitle)
+					plateFrame.ActorTitleSpecial:SetText ("<" .. subTitle .. ">")
+					plateFrame.ActorTitleSpecial:ClearAllPoints()
+					PixelUtil.SetPoint (plateFrame.ActorTitleSpecial, "top", plateFrame.ActorNameSpecial, "bottom", 0, -2)
+					
+					plateFrame.ActorTitleSpecial:SetTextColor (unpack (plateConfigs.big_actortitle_text_color))
+					plateFrame.ActorNameSpecial:SetTextColor (unpack (plateConfigs.big_actorname_text_color))
+					
+					DF:SetFontSize (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_size)
+					DF:SetFontFace (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_font)
+					
+					--DF:SetFontOutline (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_shadow)
+					Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_outline, plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
 
-						plateFrame.ActorTitleSpecial:Show()
-						--subTitle = DF:RemoveRealmName (subTitle)
-						plateFrame.ActorTitleSpecial:SetText ("<" .. subTitle .. ">")
-						plateFrame.ActorTitleSpecial:ClearAllPoints()
-						PixelUtil.SetPoint (plateFrame.ActorTitleSpecial, "top", plateFrame.ActorNameSpecial, "bottom", 0, -2)
-						
-						plateFrame.ActorTitleSpecial:SetTextColor (unpack (plateConfigs.big_actortitle_text_color))
-						plateFrame.ActorNameSpecial:SetTextColor (unpack (plateConfigs.big_actorname_text_color))
-						
-						DF:SetFontSize (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_size)
-						DF:SetFontFace (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_font)
-						
-						--DF:SetFontOutline (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_shadow)
-						Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_outline, plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
-						
-						--npc name
-						plateFrame.ActorNameSpecial:Show()
+					--npc name
+					plateFrame.ActorNameSpecial:Show()
 
-						plateFrame.CurrentUnitNameString = plateFrame.ActorNameSpecial
-						Plater.UpdateUnitName (plateFrame)
+					plateFrame.CurrentUnitNameString = plateFrame.ActorNameSpecial
+					Plater.UpdateUnitName (plateFrame)
 
-						DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size)
-						DF:SetFontFace (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_font)
-						
-						--DF:SetFontOutline (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_shadow)
-						Plater.SetFontOutlineAndShadow (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_outline, plateConfigs.big_actorname_text_shadow_color, plateConfigs.big_actorname_text_shadow_color_offset[1], plateConfigs.big_actorname_text_shadow_color_offset[2])
-					end
+					DF:SetFontSize (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_size)
+					DF:SetFontFace (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_font)
+					
+					--DF:SetFontOutline (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_shadow)
+					Plater.SetFontOutlineAndShadow (plateFrame.ActorNameSpecial, plateConfigs.big_actorname_text_outline, plateConfigs.big_actorname_text_shadow_color, plateConfigs.big_actorname_text_shadow_color_offset[1], plateConfigs.big_actorname_text_shadow_color_offset[2])
+				else
+					-- ARP
+					plateFrame.ActorTitleSpecial:Hide()
+					plateFrame.ActorNameSpecial:Hide()
 				end
+
+				-- ARP BEGIN
+				if (Plater.IsQuestObjective(plateFrame)) then
+					plateFrame.ActorNameSpecial:Show()
+				else
+					plateFrame.ActorTitleSpecial:Hide()
+					plateFrame.ActorNameSpecial:Hide()
+				end
+				-- ARP END
 			end
-			
+
 			return
 		end
 		
@@ -6341,7 +6420,7 @@ end
 				end
 			
 			elseif (IS_IN_OPEN_WORLD and DB_PLATE_CONFIG [actorType].quest_enabled and Plater.IsQuestObjective (plateFrame)) then
-				Plater.ChangeHealthBarColor_Internal (healthBar, unpack (DB_PLATE_CONFIG [actorType].quest_color))
+				Plater.ChangeHealthBarColor_Internal (healthBar, unpack (DB_PLATE_CONFIG [actorType].quest_color)) -- ARP
 
 				healthBar:Show()
 				buffFrame:Show()
@@ -6351,7 +6430,7 @@ end
 				--these twoseettings make the healthing dummy show the healthbar
 --				Plater.db.profile.plate_config.friendlynpc.only_names = false
 --				Plater.db.profile.plate_config.friendlynpc.all_names = false
-			
+
 			elseif (DB_PLATE_CONFIG [actorType].only_names) then
 				--show only the npc name without the health bar
 
@@ -7379,7 +7458,18 @@ end
 		[107622] = true, --glutonia - Dalaran
 		[106263] = 1, --earthen ring shaman - Dalaran
 		[106262] = 1, --earthen ring shaman - Dalaran
+		[135671] = 1, --earthen ring shaman 
+		[135668] = 1, --Cenarian ciurcle druid
 		[97141] = true, --koraud - Dalaran
+		[62822] = true, --cousin slowhands
+		[62821] = true, --mystic birdhat
+		[32638] = true, --Hakmud of Argus
+		[32639] = true, --Gnimo
+		[35642] = true, --Jeeves
+		[101527] = true, --Blingtron 6000
+		[32641] = true, --Drix Blackwrench
+		[32642] = true, --Mojodishu
+		[143262] = true, --Captain (bird)
 	}
 
 	function Plater.IsNpcInIgnoreList (plateFrame, onlyProfession) --private
@@ -7599,7 +7689,7 @@ end
 		local tooltipFrame = PlaterPetOwnerFinder or CreateFrame ("GameTooltip", "PlaterPetOwnerFinder", nil, "GameTooltipTemplate")
 		
 		tooltipFrame:SetOwner (WorldFrame, "ANCHOR_NONE")
-		tooltipFrame:SetHyperlink ("unit:" .. serial or "")
+		tooltipFrame:SetHyperlink ("unit:" .. (serial or ""))
 		
 		local isPlayerPet = false
 		local isOtherPet = false
@@ -8536,6 +8626,28 @@ end
 			end
 		end
 	end
+	
+	-- ARP BEGIN
+	function Plater.SetNameplateFontOutline (unitFrame, outline)
+		if (unitFrame.unit) then
+			local outline_modes = {"NONE", "MONOCHROME", "OUTLINE", "THICKOUTLINE"}
+			local plateConfigs = DB_PLATE_CONFIG[unitFrame.ActorType]
+			if (outline and outline ~= '' and tContains(outline_modes, outline)) then
+				Plater.SetFontOutlineAndShadow (unitFrame.unitName, outline, plateConfigs.actorname_text_shadow_color, plateConfigs.actorname_text_shadow_color_offset[1], plateConfigs.actorname_text_shadow_color_offset[2])
+			else
+				Plater.SetFontOutlineAndShadow (unitFrame.unitName, plateConfigs.actorname_text_outline, plateConfigs.actorname_text_shadow_color, plateConfigs.actorname_text_shadow_color_offset[1], plateConfigs.actorname_text_shadow_color_offset[2])
+			end
+		end
+	end
+
+	
+	function Plater.ResetNameplateFontOutline (unitFrame)
+		if (unitFrame.unit) then
+			local plateConfigs = DB_PLATE_CONFIG[unitFrame.ActorType]
+			Plater.SetFontOutlineAndShadow (unitFrame.unitName, plateConfigs.actorname_text_outline, plateConfigs.actorname_text_shadow_color, plateConfigs.actorname_text_shadow_color_offset[1], plateConfigs.actorname_text_shadow_color_offset[2])
+		end
+	end
+	-- ARP END
 
 	--set a temporarly size for the healthbar
 	--this value is reset when the nameplate is added to the screen
