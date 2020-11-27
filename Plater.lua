@@ -1062,15 +1062,15 @@ Plater.DefaultSpellRangeListF = {
 		local buffFrame2 = unitFrame.BuffFrame2		
 
 		-- ARP BEGIN
-		if (plateFrame [MEMBER_REACTION] >= 5) then
+		if (plateFrame [MEMBER_REACTION] >= 4) then
 			if (plateFrame.ActorTitleSpecial and plateFrame.ActorTitleSpecial:GetText() ~= '' and plateFrame.ActorTitleSpecial:GetText() ~= nil) then
-				plateFrame.unitFrame:SetAlpha (inRangeAlpha * 0.66)
-				plateFrame.ActorNameSpecial:SetAlpha(inRangeAlpha * 0.66)
-				plateFrame.ActorTitleSpecial:SetAlpha(inRangeAlpha * 0.66)
+				plateFrame.unitFrame:SetAlpha (inRangeAlpha * 0.75)
+				plateFrame.ActorNameSpecial:SetAlpha(inRangeAlpha * 0.75)
+				plateFrame.ActorTitleSpecial:SetAlpha(inRangeAlpha * 0.75)
 			else
-				plateFrame.unitFrame:SetAlpha (inRangeAlpha * 0.33)
-				plateFrame.ActorNameSpecial:SetAlpha(inRangeAlpha * 0.33)
-				plateFrame.ActorTitleSpecial:SetAlpha(inRangeAlpha * 0.33)
+				plateFrame.unitFrame:SetAlpha (inRangeAlpha * 0.5)
+				plateFrame.ActorNameSpecial:SetAlpha(inRangeAlpha * 0.5)
+				plateFrame.ActorTitleSpecial:SetAlpha(inRangeAlpha * 0.5)
 			end
 			plateFrame [MEMBER_RANGE] = false
 			plateFrame.unitFrame [MEMBER_RANGE] = false
@@ -1078,9 +1078,9 @@ Plater.DefaultSpellRangeListF = {
 		end
 
 		if (plateFrame.IsNpcWithoutHealthBar) then
-			plateFrame.unitFrame:SetAlpha (inRangeAlpha * 0.33)
-			plateFrame.ActorNameSpecial:SetAlpha(inRangeAlpha * 0.33)
-			plateFrame.ActorTitleSpecial:SetAlpha(inRangeAlpha * 0.33)
+			plateFrame.unitFrame:SetAlpha (inRangeAlpha * 0.5)
+			plateFrame.ActorNameSpecial:SetAlpha(inRangeAlpha * 0.5)
+			plateFrame.ActorTitleSpecial:SetAlpha(inRangeAlpha * 0.5)
 			plateFrame [MEMBER_RANGE] = false
 			plateFrame.unitFrame [MEMBER_RANGE] = false
 			return
@@ -5977,14 +5977,6 @@ end
 					-- ARP - no sub title then dont show
 					plateFrame.unitFrame:Hide()
 				end
-
-				-- ARP BEGIN
-				if (plateFrame [MEMBER_QUEST]) then
-					r, g, b, a = unpack (plateConfigs.quest_color)
-					plateFrame.ActorNameSpecial:Show()
-					plateFrame.ActorNameSpecial:SetTextColor (r, g, b, a)
-				end
-				-- ARP END
 			end
 
 			return
