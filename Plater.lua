@@ -902,7 +902,7 @@ Plater.DefaultSpellRangeListF = {
 				if IsPlayerSpell(163201) then
 					local using_Massacre = IsPlayerSpell(281001) or IsPlayerSpell(206315)
 					lowExecute = using_Massacre and 0.35 or 0.2
-					local using_Condemn = IsPlayerSpell(317349) or IsPlayerSpell(317485) or IsPlayerSpell(330334) or IsPlayerSpell(330325)
+					local using_Condemn = IsPlayerSpell(317320)
 					highExecute = using_Condemn and 0.8 or nil
 				end
 				
@@ -1486,8 +1486,54 @@ Plater.DefaultSpellRangeListF = {
 	end
 	
 	--~save ~cvar
+	local cvars_to_store = {
+		["NamePlateClassificationScale"] = true,
+		["NamePlateHorizontalScale"] = true,
+		["NamePlateVerticalScale"] = true,
+		["ShowClassColorInNameplate"] = true,
+		["ShowNamePlateLoseAggroFlash"] = true,
+		["nameplateGlobalScale"] = true,
+		["nameplateLargeTopInset"] = true,
+		["nameplateMaxDistance"] = true,
+		["nameplateMinScale"] = true,
+		["nameplateMotion"] = true,
+		["nameplateMotionSpeed"] = true,
+		["nameplateOccludedAlphaMult"] = true,
+		["nameplateOtherAtBase"] = true,
+		["nameplateOtherTopInset"] = true,
+		["nameplateOverlapV"] = true,
+		["nameplatePersonalHideDelaySeconds"] = true,
+		["nameplatePersonalShowAlways"] = true,
+		["nameplatePersonalShowInCombat"] = true,
+		["nameplatePersonalShowWithTarget"] = true,
+		["nameplateResourceOnTarget"] = true,
+		["nameplateSelectedScale"] = true,
+		["nameplateSelfAlpha"] = true,
+		["nameplateSelfBottomInset"] = true,
+		["nameplateSelfScale"] = true,
+		["nameplateSelfTopInset"] = true,
+		["nameplateShowAll"] = true,
+		["nameplateShowEnemies"] = true,
+		["nameplateShowEnemyGuardians"] = true,
+		["nameplateShowEnemyMinions"] = true,
+		["nameplateShowEnemyMinus"] = true,
+		["nameplateShowEnemyPets"] = true,
+		["nameplateShowEnemyTotems"] = true,
+		["nameplateShowFriendlyGuardians"] = true,
+		["nameplateShowFriendlyMinions"] = true,
+		["nameplateShowFriendlyNPCs"] = true,
+		["nameplateShowFriendlyPets"] = true,
+		["nameplateShowFriendlyTotems"] = true,
+		["nameplateShowFriends"] = true,
+		["nameplateShowOnlyNames"] = true,
+		["nameplateShowSelf"] = true,
+		["nameplateTargetBehindMaxDistance"] = true,
+		["nameplateTargetRadialPosition"] = true,
+		["showQuestTrackingTooltips"] = true,
+	}
 	--on logout or on profile change, save some important cvars inside the profile
-	function Plater.SaveConsoleVariables() --private
+	function Plater.SaveConsoleVariables(cvar, value) --private
+		--print("save cvars", cvar, value, debugstack())
 		local cvarTable = Plater.db.profile.saved_cvars
 		
 		if (not cvarTable) then
@@ -1496,64 +1542,28 @@ Plater.DefaultSpellRangeListF = {
 			cvarTable = Plater.db.profile.saved_cvars
 		end
 		
-		--> personal and resources
-		cvarTable ["nameplateShowSelf"] = GetCVar ("nameplateShowSelf")
-		cvarTable ["nameplateResourceOnTarget"] = GetCVar ("nameplateResourceOnTarget")
-		cvarTable ["nameplatePersonalShowAlways"] = GetCVar ("nameplatePersonalShowAlways")
-		cvarTable ["nameplatePersonalShowWithTarget"] = GetCVar ("nameplatePersonalShowWithTarget")
-		cvarTable ["nameplatePersonalShowInCombat"] = GetCVar ("nameplatePersonalShowInCombat")
-		cvarTable ["nameplateSelfAlpha"] = GetCVar ("nameplateSelfAlpha")
-		cvarTable ["nameplateSelfScale"] = GetCVar ("nameplateSelfScale")
-		
-		--> which nameplates to show
-		cvarTable ["nameplateShowAll"] = GetCVar ("nameplateShowAll")
-		cvarTable ["ShowNamePlateLoseAggroFlash"] = GetCVar ("ShowNamePlateLoseAggroFlash")
-		cvarTable ["nameplateShowEnemyMinions"] = GetCVar ("nameplateShowEnemyMinions")
-		cvarTable ["nameplateShowEnemyMinus"] = GetCVar ("nameplateShowEnemyMinus")
-		cvarTable ["nameplateShowFriendlyGuardians"] = GetCVar ("nameplateShowFriendlyGuardians")
-		cvarTable ["nameplateShowFriendlyPets"] = GetCVar ("nameplateShowFriendlyPets")
-		cvarTable ["nameplateShowFriendlyTotems"] = GetCVar ("nameplateShowFriendlyTotems")
-		cvarTable ["nameplateShowFriendlyMinions"] = GetCVar ("nameplateShowFriendlyMinions")
-		
-		--> make it show the class color of players
-		cvarTable ["ShowClassColorInNameplate"] = GetCVar ("ShowClassColorInNameplate")
-		
-		--> just reset to default the clamp from the top side
-		cvarTable ["nameplateOtherTopInset"] = GetCVar ("nameplateOtherTopInset")
-		
-		--> reset the horizontal and vertical scale
-		cvarTable ["NamePlateHorizontalScale"] = GetCVar ("NamePlateHorizontalScale")
-		cvarTable ["NamePlateVerticalScale"] = GetCVar ("NamePlateVerticalScale")
-		cvarTable ["NamePlateClassificationScale"] = GetCVar ("NamePlateClassificationScale")
-		
-		--> stacking nameplates
-		cvarTable ["nameplateMotion"] = GetCVar ("nameplateMotion")
-		
-		--> make the selection be a little bigger
-		cvarTable ["nameplateSelectedScale"] = GetCVar ("nameplateSelectedScale")
-		cvarTable ["nameplateMinScale"] = GetCVar ("nameplateMinScale")
-		cvarTable ["nameplateGlobalScale"] = GetCVar ("nameplateGlobalScale")
-		
-		--> distance between each nameplate when using stacking
-		cvarTable ["nameplateOverlapV"] = GetCVar ("nameplateOverlapV")
-		
-		--> movement speed of nameplates when using stacking, going above this isn't recommended
-		cvarTable ["nameplateMotionSpeed"] = GetCVar ("nameplateMotionSpeed")
-		--> this must be 1 for bug reasons on the game client
-		cvarTable ["nameplateOccludedAlphaMult"] = GetCVar ("nameplateOccludedAlphaMult")
-		--> don't show friendly npcs
-		cvarTable ["nameplateShowFriendlyNPCs"] = GetCVar ("nameplateShowFriendlyNPCs")
-		--> make the personal bar hide very fast
-		cvarTable ["nameplatePersonalHideDelaySeconds"] = GetCVar ("nameplatePersonalHideDelaySeconds")
-		
-		--> location of the personagem bar
-		cvarTable ["nameplateSelfBottomInset"] = GetCVar ("nameplateSelfBottomInset")
-		cvarTable ["nameplateSelfTopInset"] = GetCVar ("nameplateSelfTopInset")
-		
-		--> view distance
-		cvarTable ["nameplateMaxDistance"] = GetCVar ("nameplateMaxDistance")
+		if not cvar then
+			for CVarName, enabled in pairs (cvars_to_store) do
+				if enabled then
+					cvarTable [CVarName] = tostring(GetCVar (CVarName))
+				end
+			end
+		elseif cvars_to_store [cvar] then
+			cvarTable [cvar] = tostring(value)
+		end
 		
 	end
+	hooksecurefunc('SetCVar', Plater.SaveConsoleVariables)
+	hooksecurefunc('ConsoleExec', function(console)
+		local par1, par2, par3 = console:match('^(%S+)%s+(%S+)%s*(%S*)')
+		if par1 then
+			if par1:lower() == 'set' then -- /console SET cvar value
+				Plater.SaveConsoleVariables(par2, par3)
+			else -- /console cvar value
+				Plater.SaveConsoleVariables(par1, par2)
+			end
+		end
+	end)
 
 	--refresh call back will run all functions in its table when Plater refreshes the dynamic upvales for the file
 	Plater.DBRefreshCallback = {}
@@ -2873,6 +2883,7 @@ Plater.DefaultSpellRangeListF = {
 				
 			--> widget container
 				plateFrame.unitFrame.WidgetContainer = CreateFrame("frame", nil, plateFrame.unitFrame, "UIWidgetContainerNoResizeTemplate")
+				plateFrame.unitFrame.WidgetContainer.horizontalRowContainerPool = CreateFramePool("FRAME", plateFrame.unitFrame.WidgetContainer);
 				Plater.SetAnchor (plateFrame.unitFrame.WidgetContainer, Plater.db.profile.widget_bar_anchor, plateFrame.unitFrame)
 				plateFrame.unitFrame.WidgetContainer:SetScale(Plater.db.profile.widget_bar_scale)
 				plateFrame.unitFrame.WidgetContainer:UnregisterForWidgetSet()
@@ -2912,7 +2923,8 @@ Plater.DefaultSpellRangeListF = {
 			plateFrame.unitFrame.isWidgetOnlyMode = isWidgetOnlyMode
 			
 			--hide blizzard namepaltes
-			plateFrame.UnitFrame:Hide()
+			--plateFrame.UnitFrame:Hide()
+			Plater.OnRetailNamePlateShow(plateFrame.UnitFrame)
 			--show plater unit frame
 			plateFrame.unitFrame:Show()
 			
@@ -3368,6 +3380,11 @@ Plater.DefaultSpellRangeListF = {
 		if (CompactUnitFrame_UnregisterEvents) then
 			CompactUnitFrame_UnregisterEvents (self)
 		end
+		if (CompactUnitFrame_ClearWidgetSet) then
+			CompactUnitFrame_ClearWidgetSet (self)
+		end
+		--this is quite drastical and might break other stuff on retail nameplates in dungeons/raids:
+		--self.WidgetContainer = nil
 	end
 	
 	function Plater.SetFontOutlineAndShadow (fontString, outline, shadowColor, shadowXOffSet, shadowYOffSet)
@@ -3413,6 +3430,10 @@ function Plater.OnInit() --private --~oninit ~init
 		if (type (PlaterDBChr.spellRangeCheckRangeFriendly) ~= "table") then
 			PlaterDBChr.spellRangeCheckRangeFriendly = {}
 		end
+	
+	--ensure global nameplate width/height setting is initialized
+		Plater.db.profile.plate_config.global_health_width = Plater.db.profile.plate_config.global_health_width or Plater.db.profile.plate_config.enemynpc.health[1]
+		Plater.db.profile.plate_config.global_health_height = Plater.db.profile.plate_config.global_health_height or Plater.db.profile.plate_config.enemynpc.health[2]
 	
 	--range check spells
 		for specID, _ in pairs (Plater.SpecList [select (2, UnitClass ("player"))]) do
@@ -4778,6 +4799,10 @@ end
 				PixelUtil.SetPoint (healthBar, "bottomright", unitFrame, "bottomright", -xOffSet + profile.global_offset_x, yOffSet + profile.global_offset_y)
 		end
 		
+		--execute indicator
+			healthBar.healthCutOff:SetSize (healthBarHeight, healthBarHeight)
+			healthBar.executeRange:SetHeight (healthBarHeight)
+		
 		--cast bar - is set by default below the healthbar
 			castBar:ClearAllPoints()
 			PixelUtil.SetPoint (castBar, "topleft", healthBar, "bottomleft", castBarOffSetX, castBarOffSetY)
@@ -4919,7 +4944,7 @@ end
 			Plater.CheckRange (tickFrame.PlateFrame)
 			
 			--health cutoff (execute range) - don't show if the nameplate is the personal bar
-			if (DB_USE_HEALTHCUTOFF and not unitFrame.IsSelf) then
+			if (DB_USE_HEALTHCUTOFF and not unitFrame.IsSelf and not unitFrame.PlayerCannotAttack) then
 				local healthPercent = (healthBar.currentHealth or 1) / (healthBar.currentHealthMax or 1)
 				if (healthPercent < DB_HEALTHCUTOFF_AT) then
 					if (not healthBar.healthCutOff:IsShown() or healthBar.healthCutOff.isLower) then
