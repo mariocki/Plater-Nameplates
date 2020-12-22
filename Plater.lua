@@ -1526,7 +1526,7 @@ Plater.DefaultSpellRangeListF = {
 		["nameplateShowSelf"] = true,
 		["nameplateTargetBehindMaxDistance"] = true,
 		["nameplateTargetRadialPosition"] = true,
-		["showQuestTrackingTooltips"] = true,
+		--["showQuestTrackingTooltips"] = true, -- this seems to be gone as of 18.12.2020
 	}
 	--on logout or on profile change, save some important cvars inside the profile
 	function Plater.SaveConsoleVariables(cvar, value) --private
@@ -1705,12 +1705,12 @@ Plater.DefaultSpellRangeListF = {
 			local colorID = infoTable [3] --the color
 			
 			if (enabled1 and not enabled2) then
-				local r, g, b = DF:ParseColors (colorID)
-				DB_UNITCOLOR_CACHE [npcID] = {r, g, b, 1}
+				local r, g, b, a = DF:ParseColors (colorID)
+				DB_UNITCOLOR_CACHE [npcID] = {r, g, b, a}
 				
 			elseif (enabled1 and enabled2) then
-				local r, g, b = DF:ParseColors (colorID)
-				DB_UNITCOLOR_SCRIPT_CACHE [npcID] = {r, g, b, 1}
+				local r, g, b, a = DF:ParseColors (colorID)
+				DB_UNITCOLOR_SCRIPT_CACHE [npcID] = {r, g, b, a}
 				
 			end
 		end
@@ -2336,9 +2336,10 @@ Plater.DefaultSpellRangeListF = {
 				end
 			end
 			
-			if Plater.db.profile.plate_config.friendlynpc.quest_enabled and not InCombatLockdown() then
-				SetCVar("showQuestTrackingTooltips", 1) -- ensure it is turned on...
-			end
+			-- this seems to be gone as of 18.12.2020
+			--if Plater.db.profile.plate_config.friendlynpc.quest_enabled and not InCombatLockdown() then
+				--SetCVar("showQuestTrackingTooltips", 1) -- ensure it is turned on...
+			--end
 
 			--create the frame to hold the plater resoruce bar
 			Plater.CreatePlaterResourceFrame() --~resource
@@ -4382,7 +4383,7 @@ function Plater.OnInit() --private --~oninit ~init
 			if (plateFrame.PlateConfig.healthbar_color_by_hp) then
 				local originalColor = plateFrame.PlateConfig.healthbar_color
 				local r, g, b = DF:LerpLinearColor (abs (currentHealth / currentHealthMax - 1), 1, originalColor[1], originalColor[2], originalColor[3], 1, .4, 0)
-				Plater.ChangeHealthBarColor_Internal (self, r, g, b, true)
+				Plater.ChangeHealthBarColor_Internal (self, r, g, b, (originalColor[4] or 1), true)
 			end
 			
 			Plater.CheckLifePercentText (unitFrame)
@@ -4539,7 +4540,7 @@ end
 				--there's a bug here where quest_color is nil for a friendly npc
 				--this is happening when an enemy quest npc turns friendly and (probably) the actorType doesn't change
 				--so in the enemy npc settings table does not have 'quest_color' input
-				Plater.ChangeHealthBarColor_Internal (unitFrame.healthBar, unpack (DB_PLATE_CONFIG [unitFrame.ActorType].quest_color or {.5, 1, 0}))
+				Plater.ChangeHealthBarColor_Internal (unitFrame.healthBar, unpack (DB_PLATE_CONFIG [unitFrame.ActorType].quest_color or {.5, 1, 0, 1}))
 			end
 		end
 	end
@@ -4555,8 +4556,8 @@ end
 				local reaction = unitFrame [MEMBER_REACTION]
 				--has a valid reaction
 				if (reaction) then
-					local r, g, b = unpack (Plater.db.profile.color_override_colors [reaction])
-					Plater.ChangeHealthBarColor_Internal (unitFrame.healthBar, r, g, b, true)
+					local r, g, b, a = unpack (Plater.db.profile.color_override_colors [reaction])
+					Plater.ChangeHealthBarColor_Internal (unitFrame.healthBar, r, g, b, a, true)
 				end
 			else
 				--unit is a quest mob, reset the color to quest color
@@ -4578,11 +4579,12 @@ end
 	end
 	
 	--internal function to change the health bar color
-	function Plater.ChangeHealthBarColor_Internal (healthBar, r, g, b, forceNoLerp) --private
+	function Plater.ChangeHealthBarColor_Internal (healthBar, r, g, b, a, forceNoLerp) --private
+		a = a or 1
 		if (r ~= healthBar.R or g ~= healthBar.G or b ~= healthBar.B) then
 			healthBar.R, healthBar.G, healthBar.B = r, g, b
 			if (not DB_LERP_COLOR or forceNoLerp) then -- ~lerpcolor
-				healthBar.barTexture:SetVertexColor (r, g, b)
+				healthBar.barTexture:SetVertexColor (r, g, b, a)
 			end
 		end
 	end
@@ -4590,7 +4592,7 @@ end
 	--do several checkes to determine which are the color of this nameplate
 	--if force refresh is true, it'll ignore aggro and incombat checks in the ColorOverrider function
 	function Plater.FindAndSetNameplateColor (unitFrame, forceRefresh)
-		local r, g, b = 1, 1, 1
+		local r, g, b, a = 1, 1, 1, 1
 		local unitID = unitFrame.unit
 		if (unitFrame.IsSelf) then
 			return
@@ -4603,26 +4605,26 @@ end
 						local _, class = UnitClass (unitID)
 						local classColor = RAID_CLASS_COLORS [class]
 						if (classColor) then -- and unitFrame.optionTable.useClassColors
-							r, g, b = classColor.r, classColor.g, classColor.b
+							r, g, b, a = classColor.r, classColor.g, classColor.b, classColor.a
 						end
 					else
-						r, g, b = unpack(Plater.db.profile.plate_config.friendlyplayer.fixed_class_color)
+						r, g, b, a = unpack(Plater.db.profile.plate_config.friendlyplayer.fixed_class_color)
 					end
 				elseif (unitFrame.ActorType == ACTORTYPE_ENEMY_PLAYER) then
 					if (Plater.db.profile.plate_config.enemyplayer.use_playerclass_color) then
 						local _, class = UnitClass (unitID)
 						local classColor = RAID_CLASS_COLORS [class]
 						if (classColor) then -- and unitFrame.optionTable.useClassColors
-							r, g, b = classColor.r, classColor.g, classColor.b
+							r, g, b, a = classColor.r, classColor.g, classColor.b, classColor.a
 						end
 					else
-						r, g, b = unpack(Plater.db.profile.plate_config.enemyplayer.fixed_class_color)
+						r, g, b, a = unpack(Plater.db.profile.plate_config.enemyplayer.fixed_class_color)
 					end
 				end
 				
 			--check if is tapped
 			elseif (Plater.IsUnitTapDenied (unitID)) then
-				r, g, b = unpack (Plater.db.profile.tap_denied_color)
+				r, g, b, a = unpack (Plater.db.profile.tap_denied_color)
 
 			else
 				if (Plater.CanOverrideColor) then
@@ -4637,11 +4639,11 @@ end
 				end
 				
 				--get the color from the client
-				r, g, b = UnitSelectionColor (unitID)
+				r, g, b, a = UnitSelectionColor (unitID)
 			end
 		end
 		
-		Plater.ChangeHealthBarColor_Internal (unitFrame.healthBar, r, g, b, true)
+		Plater.ChangeHealthBarColor_Internal (unitFrame.healthBar, r, g, b, a, true)
 	end
 
 	--force an update on all nameplates showin in the screen
@@ -5206,9 +5208,9 @@ end
 		Plater.EndLogPerformanceCore("Plater-Core", "Update", "NameplateTick")
 	end
 	
-	local set_aggro_color = function (self, r, g, b) --self = unitName
+	local set_aggro_color = function (self, r, g, b, a) --self = unitName
 		if (DB_AGGRO_CHANGE_HEALTHBAR_COLOR) then	
-			Plater.ChangeHealthBarColor_Internal (self.healthBar, r, g, b)
+			Plater.ChangeHealthBarColor_Internal (self.healthBar, r, g, b, a)
 		end
 		
 		if (DB_AGGRO_CHANGE_BORDER_COLOR) then
@@ -6492,9 +6494,9 @@ end
 				local _, class = UnitClass (unitFrame [MEMBER_UNITID])
 				if (class) then		
 					local color = RAID_CLASS_COLORS [class]
-					Plater.ChangeHealthBarColor_Internal (healthBar, color.r, color.g, color.b)
+					Plater.ChangeHealthBarColor_Internal (healthBar, color.r, color.g, color.b, color.a)
 				else
-					Plater.ChangeHealthBarColor_Internal (healthBar, 1, 1, 1)
+					Plater.ChangeHealthBarColor_Internal (healthBar, 1, 1, 1, 1)
 				end
 			end
 			
@@ -6522,7 +6524,7 @@ end
 						local _, class = UnitClass (unitFrame [MEMBER_UNITID])
 						if (class) then		
 							local color = RAID_CLASS_COLORS [class]
-							Plater.ChangeHealthBarColor_Internal (healthBar, color.r, color.g, color.b)
+							Plater.ChangeHealthBarColor_Internal (healthBar, color.r, color.g, color.b, color.a)
 						else
 							Plater.ChangeHealthBarColor_Internal (healthBar, unpack (DB_PLATE_CONFIG [actorType].fixed_class_color))
 						end
@@ -8648,13 +8650,13 @@ end
 	end
 
 	--modify the color of the health bar
-	function Plater.SetNameplateColor (unitFrame, r, g, b)
+	function Plater.SetNameplateColor (unitFrame, r, g, b, a)
 		if (unitFrame.unit) then
 			if (not r) then
 				Plater.RefreshNameplateColor (unitFrame)
 			else
-				r, g, b = DF:ParseColors (r, g, b)
-				return Plater.ChangeHealthBarColor_Internal (unitFrame.healthBar, r, g, b)
+				r, g, b, a = DF:ParseColors (r, g, b, a)
+				return Plater.ChangeHealthBarColor_Internal (unitFrame.healthBar, r, g, b, a)
 			end
 		end
 	end
@@ -10991,7 +10993,7 @@ end
 		Plater.DebugColorAnimation_Timer = C_Timer.NewTicker (0.5, function() --~animationtest
 			for _, plateFrame in ipairs (Plater.GetAllShownPlates()) do
 				--make the bar jump from green to pink - pink to green
-				Plater.ChangeHealthBarColor_Internal (plateFrame.unitFrame.healthBar, math.abs (math.sin (GetTime())), math.abs (math.cos (GetTime())), math.abs (math.sin (GetTime())))
+				Plater.ChangeHealthBarColor_Internal (plateFrame.unitFrame.healthBar, math.abs (math.sin (GetTime())), math.abs (math.cos (GetTime())), math.abs (math.sin (GetTime())), 1)
 			end
 		end)
 
