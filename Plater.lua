@@ -1832,15 +1832,20 @@ local class_specs_coords = {
 			local castBar = unitFrame.castBar
 			local buffFrame1 = unitFrame.BuffFrame
 			local buffFrame2 = unitFrame.BuffFrame2
+			local buffSpecial = unitFrame.ExtraIconFrame
+			
 			--strata
 			unitFrame:SetFrameStrata (profile.ui_parent_base_strata)
 			castBar:SetFrameStrata (profile.ui_parent_cast_strata)
 			buffFrame1:SetFrameStrata (profile.ui_parent_buff_strata)
 			buffFrame2:SetFrameStrata (profile.ui_parent_buff2_strata)
+			buffSpecial:SetFrameStrata (profile.ui_parent_buff_special_strata)
+			
 			--level
 			castBar:SetFrameLevel (profile.ui_parent_cast_level)
 			buffFrame1:SetFrameLevel (profile.ui_parent_buff_level)
 			buffFrame2:SetFrameLevel (profile.ui_parent_buff2_level)
+			buffSpecial:SetFrameLevel (profile.ui_parent_buff_special_level)
 			
 			--raid-target marker adjust:
 			unitFrame.PlaterRaidTargetFrame:SetFrameStrata(unitFrame.healthBar:GetFrameStrata())
@@ -6475,7 +6480,7 @@ end
 		--check for quest color
 		if (IS_IN_OPEN_WORLD and actorType == ACTORTYPE_ENEMY_NPC and DB_PLATE_CONFIG [actorType].quest_enabled) then --actorType == ACTORTYPE_FRIENDLY_NPC or 
 			local isQuestMob = Plater.IsQuestObjective (plateFrame)
-			if (isQuestMob and not Plater.IsUnitTapDenied (plateFrame.unitFrame.unit)) then
+			if (isQuestMob and DB_PLATE_CONFIG [actorType].quest_color_enabled and not Plater.IsUnitTapDenied (plateFrame.unitFrame.unit)) then
 				if (plateFrame [MEMBER_REACTION] == UNITREACTION_NEUTRAL) then
 					Plater.ChangeHealthBarColor_Internal (healthBar, unpack (DB_PLATE_CONFIG [actorType].quest_color_neutral))
 					
@@ -6522,7 +6527,9 @@ end
 				end
 			
 			elseif (IS_IN_OPEN_WORLD and DB_PLATE_CONFIG [actorType].quest_enabled and Plater.IsQuestObjective (plateFrame)) then
-				Plater.ChangeHealthBarColor_Internal (healthBar, unpack (DB_PLATE_CONFIG [actorType].quest_color))
+				if (DB_PLATE_CONFIG [actorType].quest_color_enabled) then
+					Plater.ChangeHealthBarColor_Internal (healthBar, unpack (DB_PLATE_CONFIG [actorType].quest_color))
+				end
 
 				healthBar:Show()
 				buffFrame:Show()
@@ -7799,7 +7806,9 @@ end
 		local time, token, hidding, sourceGUID, sourceName, sourceFlag, sourceFlag2, targetGUID, targetName, targetFlag, targetFlag2, spellID, spellName, spellType, amount, overKill, school, resisted, blocked, absorbed, isCritical = CombatLogGetCurrentEventInfo()
 		local func = parserFunctions [token]
 		if (func) then
-			return func (time, token, hidding, sourceGUID, sourceName, sourceFlag, sourceFlag2, targetGUID, targetName, targetFlag, targetFlag2, spellID, spellName, spellType, amount, overKill, school, resisted, blocked, absorbed, isCritical)
+			Plater.StartLogPerformanceCore("Plater-Core", "Events", token)
+			func (time, token, hidding, sourceGUID, sourceName, sourceFlag, sourceFlag2, targetGUID, targetName, targetFlag, targetFlag2, spellID, spellName, spellType, amount, overKill, school, resisted, blocked, absorbed, isCritical)
+			Plater.EndLogPerformanceCore("Plater-Core", "Events", token)
 		end
 	end
 
@@ -11063,13 +11072,13 @@ function SlashCmdList.PLATER (msg, editbox)
 		
 		return
 	
-	elseif (msg == "profstart") then
-		Plater.EnableProfiling()
+	elseif (msg == "profstart" or msg == "profstartcore") then
+		Plater.EnableProfiling(true)
 		
 		return
 	
-	elseif (msg == "profstartcore") then
-		Plater.EnableProfiling(true)
+	elseif (msg == "profstartmods") then
+		Plater.EnableProfiling(false)
 		
 		return
 	
