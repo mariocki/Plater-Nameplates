@@ -3551,9 +3551,6 @@ function Plater.OnInit() --private --~oninit ~init
 	end
 
 	Plater.Locale =  GetLocale()
-	
-	--Register LDB
-	Plater.InitLDB()
 
 	--Plater:BossModsLink()
 	
@@ -3564,6 +3561,9 @@ function Plater.OnInit() --private --~oninit ~init
 		PlaterDBChr.buffsBanned = PlaterDBChr.buffsBanned or {}
 		PlaterDBChr.spellRangeCheckRangeEnemy = PlaterDBChr.spellRangeCheckRangeEnemy or {}
 		PlaterDBChr.spellRangeCheckRangeFriendly = PlaterDBChr.spellRangeCheckRangeFriendly or {}
+
+	--Register LDB
+	Plater.InitLDB()
 
 	--to fix: attempt to index field 'spellRangeCheck' (a string value)
 		if (type (PlaterDBChr.spellRangeCheckRangeEnemy) ~= "table") then
@@ -4581,8 +4581,9 @@ function Plater.OnInit() --private --~oninit ~init
 			end
 			
 			if (plateFrame.actorType == ACTORTYPE_FRIENDLY_PLAYER) then
+				local isWithoutHealthbar = plateFrame.IsFriendlyPlayerWithoutHealthBar
 				Plater.ParseHealthSettingForPlayer (plateFrame)
-				self.ScheduleNameUpdate = true
+				self.ScheduleNameUpdate = plateFrame.IsFriendlyPlayerWithoutHealthBar ~= isWithoutHealthbar
 				--Plater.UpdatePlateText (plateFrame, DB_PLATE_CONFIG [ACTORTYPE_FRIENDLY_PLAYER], false)
 			end
 			
@@ -4701,7 +4702,7 @@ end
 
 	function Plater.SetQuestColorByReaction (unitFrame)
 		--unit is a quest mob, reset the color to quest color
-		if (unitFrame.ActorType) then
+		if (unitFrame.ActorType and DB_PLATE_CONFIG [unitFrame.ActorType].quest_color_enabled) then
 			if (unitFrame [MEMBER_REACTION] == UNITREACTION_NEUTRAL) then
 				Plater.ChangeHealthBarColor_Internal (unitFrame.healthBar, unpack (DB_PLATE_CONFIG [unitFrame.ActorType].quest_color_neutral))
 				
@@ -5915,7 +5916,14 @@ end
 	-- update all texts in the nameplate, settings can variate from different unit types
 	-- needReset is true when the previous unit type shown on this place is different from the current unit
 	function Plater.UpdatePlateText (plateFrame, plateConfigs, needReset) --private
-
+	
+		if plateFrame.unitFrame.isWidgetOnlyMode then
+			plateFrame.ActorNameSpecial:Hide()
+			plateFrame.ActorTitleSpecial:Hide()
+			
+			return
+		end
+		
 		-- ensure castBar updates are done, as this needs to be done for all types of plates...
 		local spellnameString = plateFrame.unitFrame.castBar.Text
 		local spellPercentString = plateFrame.unitFrame.castBar.percentText
@@ -6039,7 +6047,7 @@ end
 					local r, g, b, a
 					
 					--get the quest color if this npcs is a quest npc
-					if (plateFrame [MEMBER_QUEST]) then
+					if (plateFrame [MEMBER_QUEST] and DB_PLATE_CONFIG [plateFrame.unitFrame.ActorType].quest_color_enabled) then
 						if (plateFrame [MEMBER_REACTION] == UNITREACTION_NEUTRAL) then
 							r, g, b, a = unpack (plateConfigs.quest_color_neutral)
 						else
@@ -7331,22 +7339,19 @@ end
 
 	--check the setting 'only_damaged' and 'only_thename' for player characters. not critical code, can run slow
 	function Plater.ParseHealthSettingForPlayer (plateFrame) --private
-		plateFrame.IsFriendlyPlayerWithoutHealthBar = false
-
+		local isFriendlyPlayerWithoutHealthBar = plateFrame.IsFriendlyPlayerWithoutHealthBar
 		if (DB_PLATE_CONFIG [ACTORTYPE_FRIENDLY_PLAYER].only_thename and not DB_PLATE_CONFIG [ACTORTYPE_FRIENDLY_PLAYER].only_damaged) then
-			Plater.HideHealthBar (plateFrame.unitFrame, true)
-			plateFrame.IsFriendlyPlayerWithoutHealthBar = true
+			if not isFriendlyPlayerWithoutHealthBar then
+				Plater.HideHealthBar (plateFrame.unitFrame, true)
+			end
 			
 		elseif (DB_PLATE_CONFIG [ACTORTYPE_FRIENDLY_PLAYER].only_damaged) then
 			local healthBar = plateFrame.unitFrame.healthBar
 			if ((healthBar.currentHealth or 1) < (healthBar.currentHealthMax or 1)) then
 				Plater.ShowHealthBar (plateFrame.unitFrame)
-			else
-				Plater.HideHealthBar (plateFrame.unitFrame, true)
 				
-				if (DB_PLATE_CONFIG [ACTORTYPE_FRIENDLY_PLAYER].only_thename) then
-					plateFrame.IsFriendlyPlayerWithoutHealthBar = true
-				end
+			elseif not isFriendlyPlayerWithoutHealthBar then
+				Plater.HideHealthBar (plateFrame.unitFrame, true)
 			end
 			
 		else
@@ -10037,7 +10042,7 @@ end
 		
 		--init modEnv if necessary
 		local needsInitCall = false
-		if not PLATER_GLOBAL_MOD_ENV [scriptObject.scriptId] then
+		if (not PLATER_GLOBAL_MOD_ENV [scriptObject.scriptId]) then
 			needsInitCall = true
 			PLATER_GLOBAL_MOD_ENV [scriptObject.scriptId] = {
 				config = {}
@@ -10052,9 +10057,26 @@ end
 
 		for i = 1, #scriptOptions do
 			local thisOption = scriptOptions[i]
-			if options_for_config_table[thisOption.Type] then
-				if type(scriptOptionsValues[thisOption.Key]) == "boolean" then
+			if (options_for_config_table[thisOption.Type]) then
+				if (type(scriptOptionsValues[thisOption.Key]) == "boolean") then
 					PLATER_GLOBAL_MOD_ENV [scriptObject.scriptId].config[thisOption.Key] = scriptOptionsValues[thisOption.Key]
+				elseif (thisOption.Type == 7) then
+					--check if the options is a list
+					
+					--build default values if needed
+					if not scriptOptionsValues[thisOption.Key] then
+						scriptOptionsValues[thisOption.Key] = DF.table.copy({}, thisOption.Value)
+					end
+					
+					--build a hash table with the entries in the list
+					local hashTable = {}
+					for index, entryTable in ipairs(scriptOptionsValues[thisOption.Key]) do
+						local key = entryTable[1]
+						local value = entryTable[2]
+						hashTable[key] = value
+					end
+
+					PLATER_GLOBAL_MOD_ENV [scriptObject.scriptId].config[thisOption.Key] = hashTable
 				else
 					PLATER_GLOBAL_MOD_ENV [scriptObject.scriptId].config[thisOption.Key] = scriptOptionsValues[thisOption.Key] or thisOption.Value
 				end
@@ -10078,9 +10100,9 @@ end
 				else
 					--store the function to execute inside the global script object
 					--setfenv (compiledScript, functionFilter)
-					if not Plater.db.profile.shadowMode then
+					if (not Plater.db.profile.shadowMode) then
 						DF:SetEnvironment(compiledScript, nil, platerModEnvironment)
-					elseif Plater.db.profile.shadowMode == 1 then
+					elseif (Plater.db.profile.shadowMode == 1) then
 						SetPlaterEnvironment(compiledScript)
 					end
 					
@@ -10158,9 +10180,26 @@ end
 
 		for i = 1, #scriptOptions do
 			local thisOption = scriptOptions[i]
-			if options_for_config_table[thisOption.Type] then
-				if type(scriptOptionsValues[thisOption.Key]) == "boolean" then
+			if (options_for_config_table[thisOption.Type]) then
+				if (type(scriptOptionsValues[thisOption.Key]) == "boolean") then
 					PLATER_GLOBAL_SCRIPT_ENV [scriptObject.scriptId].config[thisOption.Key] = scriptOptionsValues[thisOption.Key]
+				elseif (thisOption.Type == 7) then
+					--check if the options is a list
+					
+					--build default values if needed
+					if not scriptOptionsValues[thisOption.Key] then
+						scriptOptionsValues[thisOption.Key] = DF.table.copy({}, thisOption.Value)
+					end
+					
+					--build a hash table with the entries in the list
+					local hashTable = {}
+					for index, entryTable in ipairs(scriptOptionsValues[thisOption.Key]) do
+						local key = entryTable[1]
+						local value = entryTable[2]
+						hashTable[key] = value
+					end
+
+					PLATER_GLOBAL_SCRIPT_ENV [scriptObject.scriptId].config[thisOption.Key] = hashTable
 				else
 					PLATER_GLOBAL_SCRIPT_ENV [scriptObject.scriptId].config[thisOption.Key] = scriptOptionsValues[thisOption.Key] or thisOption.Value
 				end
@@ -10175,9 +10214,9 @@ end
 			else
 				--get the function to execute
 				--setfenv (compiledScript, functionFilter)
-				if not Plater.db.profile.shadowMode then
+				if (not Plater.db.profile.shadowMode) then
 					DF:SetEnvironment(compiledScript, nil, platerModEnvironment)
-				elseif Plater.db.profile.shadowMode == 1 then
+				elseif (Plater.db.profile.shadowMode == 1) then
 					SetPlaterEnvironment(compiledScript)
 				end
 				scriptFunctions [scriptType] = compiledScript()
@@ -10192,7 +10231,6 @@ end
 		elseif (scriptObject.ScriptType == 3) then --unit plate
 			triggerContainer = "NpcNames"
 		end
-		
 		
 		for i = 1, #scriptObject [triggerContainer] do
 			local triggerId = scriptObject [triggerContainer] [i]
@@ -10255,7 +10293,7 @@ end
 				end
 				
 				--run initialization (once)
-				if needsInitCall then
+				if (needsInitCall) then
 					Plater.ScriptMetaFunctions.ScriptRunInitialization(globalScriptObject)
 					needsInitCall = false
 				end
