@@ -978,7 +978,7 @@ local class_specs_coords = {
 					
 				end,
 				OnTooltipShow = function (tooltip)
-					tooltip:AddLine ("Plater", 1, 1, 1)
+					tooltip:AddLine ("Plater Nameplates", 1, 1, 1)
 					tooltip:AddLine ("|cFFCFCFCFLeft click|r: Show/Hide Options Window")
 					tooltip:AddLine ("|cFFCFCFCFRight click|r: Quick Menu")
 				end,
@@ -8567,6 +8567,7 @@ end
 	--@noSpecialAuras: won't check special auras
 	function Plater.CheckAuras (self, buffList, debuffList, noSpecialAuras)
 		local buffFrame = self.BuffFrame
+		local buffFrame2 = self.BuffFrame2
 		
 		Plater.ResetAuraContainer (buffFrame)
 		
@@ -8579,7 +8580,12 @@ end
 		buffFrame.unit = self.unit
 		Plater.AlignAuraFrames (buffFrame)
 		buffFrame:SetAlpha (DB_AURA_ALPHA)
-		buffFrame2:SetAlpha (DB_AURA_ALPHA)
+		
+		if (DB_AURA_SEPARATE_BUFFS) then
+			buffFrame2.unit = self.unit
+			Plater.AlignAuraFrames (buffFrame2)
+			buffFrame2:SetAlpha (DB_AURA_ALPHA)
+		end
 	end
 	
 	--return the health bar and the unitname text
