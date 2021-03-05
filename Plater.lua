@@ -7033,7 +7033,7 @@ end
 			end
 			if (config.indicator_spec) then
 				-- use BG info if available
-				local texture, L, R, T, B = Plater.GetSpecIconForUnitFromBG(plateFrame [MEMBER_UNITID])
+				local texture, L, R, T, B = Plater.GetSpecIconForUnitFromBG(plateFrame.unitFrame [MEMBER_UNITID])
 				if texture then
 					Plater.AddIndicator (plateFrame, "specicon", texture, L, R, T, B)
 				else
@@ -8352,6 +8352,11 @@ end
 	end
 
 	function Plater.GetUnitBGInfo(unit)
+
+		if (not UnitIsPlayer(unit)) then
+			return nil
+		end
+
 		local name = GetUnitName(unit, true)
 		if not BG_PLAYER_CACHE[name] then
 			Plater.UpdateBgPlayerRoleCache()
@@ -8361,6 +8366,11 @@ end
 	end
 	
 	function Plater.GetSpecIconForUnitFromBG(unit)
+
+		if (not UnitIsPlayer(unit)) then
+			return nil
+		end
+
 		local name = GetUnitName(unit, true)
 		if not BG_PLAYER_CACHE[name] then
 			Plater.UpdateBgPlayerRoleCache()
