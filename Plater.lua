@@ -463,7 +463,7 @@ Plater.TargetIndicators = {
 		desaturated = 1,
 		width = 4,
 		height = 4,
-		autoScale = true,
+		autoScale = false,
 		--scale = 1,
 		x = 2,
 		y = 2,
@@ -1946,10 +1946,19 @@ local class_specs_coords = {
 			buffSpecial:SetFrameStrata (profile.ui_parent_buff_special_strata)
 			
 			--level
-			castBar:SetFrameLevel (profile.ui_parent_cast_level)
-			buffFrame1:SetFrameLevel (profile.ui_parent_buff_level)
-			buffFrame2:SetFrameLevel (profile.ui_parent_buff2_level)
-			buffSpecial:SetFrameLevel (profile.ui_parent_buff_special_level)
+			local baseLevel = unitFrame:GetFrameLevel()
+			
+			local tmplevel = baseLevel + profile.ui_parent_cast_level + 3
+			castBar:SetFrameLevel ((tmplevel > 0) and tmplevel or 0)
+			
+			tmplevel = baseLevel + profile.ui_parent_buff_level + 3
+			buffFrame1:SetFrameLevel ((tmplevel > 0) and tmplevel or 0)
+			
+			tmplevel = baseLevel + profile.ui_parent_buff2_level + 10
+			buffFrame2:SetFrameLevel ((tmplevel > 0) and tmplevel or 0)
+			
+			tmplevel = baseLevel + profile.ui_parent_buff_special_level + 10
+			buffSpecial:SetFrameLevel ((tmplevel > 0) and tmplevel or 0)
 			
 			--raid-target marker adjust:
 			unitFrame.PlaterRaidTargetFrame:SetFrameStrata(unitFrame.healthBar:GetFrameStrata())
@@ -2989,9 +2998,17 @@ local class_specs_coords = {
 			--> border
 				--create a border using default borders from the retail game
 				local healthBarBorder = CreateFrame("frame", nil, plateFrame.unitFrame.healthBar, "NamePlateFullBorderTemplate", BackdropTemplateMixin and "BackdropTemplate")
+				healthBarBorder.Left:SetDrawLayer("OVERLAY", 6)
+				healthBarBorder.Right:SetDrawLayer("OVERLAY", 6)
+				healthBarBorder.Top:SetDrawLayer("OVERLAY", 6)
+				healthBarBorder.Bottom:SetDrawLayer("OVERLAY", 6)
 				plateFrame.unitFrame.healthBar.border = healthBarBorder
 				
 				local powerBarBorder = CreateFrame("frame", nil, plateFrame.unitFrame.powerBar, "NamePlateFullBorderTemplate", BackdropTemplateMixin and "BackdropTemplate")
+				powerBarBorder.Left:SetDrawLayer("OVERLAY", 6)
+				powerBarBorder.Right:SetDrawLayer("OVERLAY", 6)
+				powerBarBorder.Top:SetDrawLayer("OVERLAY", 6)
+				powerBarBorder.Bottom:SetDrawLayer("OVERLAY", 6)
 				plateFrame.unitFrame.powerBar.border = powerBarBorder
 				powerBarBorder:SetVertexColor (0, 0, 0, 1)
 
@@ -4193,8 +4210,8 @@ function Plater.OnInit() --private --~oninit ~init
 			local unitFrame = castBar.unitFrame
 			local borderShield = castBar.BorderShield
 			
-			icon:SetDrawLayer ("OVERLAY", 5)
-			borderShield:SetDrawLayer ("OVERLAY", 6)
+			--icon:SetDrawLayer ("OVERLAY", 5)
+			--borderShield:SetDrawLayer ("OVERLAY", 6)
 			local castBarHeight = castBar:GetHeight()
 			
 			if (profile.castbar_icon_customization_enabled) then
@@ -9710,8 +9727,8 @@ end
 			["CommHandler"] = true,
 			["CommReceived"] = true,
 			["GetAllShownPlates"] = false,
-			["GetHashKey"] = true,
-			["IsShowingResourcesOnTarget"] = true,
+			["GetHashKey"] = false,
+			["IsShowingResourcesOnTarget"] = false,
 			["OnRetailNamePlateShow"] = true,
 			["UpdateSelfPlate"] = true,
 			["CastBarOnShow_Hook"] = true,
@@ -9830,7 +9847,6 @@ end
 		["WeakAurasSaved"] = true,
 	}
 	
-	--UNUSED (for now)
 	--this allows full shadowing on 'Plater' global with the filter above
 	local function buildShadowTable(privateFunctionsTable, tableKey, shadowTable)
 		if not privateFunctionsTable then return end
@@ -10004,9 +10020,9 @@ end
 			else
 				--store the function to execute
 				--setfenv (compiledScript, functionFilter)
-				if not Plater.db.profile.shadowMode then
+				if (Plater.db.profile.shadowMode and Plater.db.profile.shadowMode == 0) then -- legacy mode
 					DF:SetEnvironment(compiledScript, nil, platerModEnvironment)
-				elseif Plater.db.profile.shadowMode == 1 then
+				elseif (not Plater.db.profile.shadowMode or Plater.db.profile.shadowMode == 1) then
 					SetPlaterEnvironment(compiledScript)
 				end
 				
@@ -10183,9 +10199,9 @@ end
 				else
 					--store the function to execute inside the global script object
 					--setfenv (compiledScript, functionFilter)
-					if (not Plater.db.profile.shadowMode) then
+					if (Plater.db.profile.shadowMode and Plater.db.profile.shadowMode == 0) then -- legacy mode
 						DF:SetEnvironment(compiledScript, nil, platerModEnvironment)
-					elseif (Plater.db.profile.shadowMode == 1) then
+					elseif (not Plater.db.profile.shadowMode or Plater.db.profile.shadowMode == 1) then
 						SetPlaterEnvironment(compiledScript)
 					end
 					
@@ -10297,9 +10313,9 @@ end
 			else
 				--get the function to execute
 				--setfenv (compiledScript, functionFilter)
-				if (not Plater.db.profile.shadowMode) then
+				if (Plater.db.profile.shadowMode and Plater.db.profile.shadowMode == 0) then -- legacy mode
 					DF:SetEnvironment(compiledScript, nil, platerModEnvironment)
-				elseif (Plater.db.profile.shadowMode == 1) then
+				elseif (not Plater.db.profile.shadowMode or Plater.db.profile.shadowMode == 1) then
 					SetPlaterEnvironment(compiledScript)
 				end
 				scriptFunctions [scriptType] = compiledScript()
