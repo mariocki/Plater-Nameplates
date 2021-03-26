@@ -989,6 +989,14 @@ local class_specs_coords = {
 							end
 							LDBIcon:Refresh ("Plater", PlaterDBChr.minimap)
 						end
+						
+						GameCooltip:AddMenu (1, function() Plater.EnableProfiling(true) end, true, nil, nil, "Start profiling", nil, true)
+						GameCooltip:AddIcon ([[Interface\Addons\Plater\media\sphere_full_64]], 1, 1, 14, 14, 0, 1, 0, 1, "red")
+						GameCooltip:AddMenu (1, function() Plater.DisableProfiling() end, true, nil, nil, "Stop profiling", nil, true)
+						GameCooltip:AddIcon ([[Interface\Addons\Plater\media\square_64]], 1, 1, 14, 14, 0, 1, 0, 1, "blue")
+						GameCooltip:AddMenu (1, function() Plater.ShowPerfData() end, true, nil, nil, "Show profiling data", nil, true)
+						GameCooltip:AddIcon ([[Interface\Addons\Plater\media\eye_64]], 1, 1, 14, 14, 0, 1, 0, 1, "green")
+						GameCooltip:AddLine ("$div")
 						GameCooltip:AddMenu (1, disable_minimap, true, nil, nil, "Hide/Show Minimap Icon", nil, true)
 						GameCooltip:AddIcon ([[Interface\Buttons\UI-Panel-HideButton-Disabled]], 1, 1, 14, 14, 7/32, 24/32, 8/32, 24/32, "gray")
 						
@@ -1132,7 +1140,9 @@ local class_specs_coords = {
 			unitFrame.BuffFrame:SetAlpha (1)
 			unitFrame.BuffFrame2:SetAlpha (1)
 			
+			Plater.EndLogPerformanceCore("Plater-Core", "Update", "CheckRange")
 			return
+			
 		elseif (plateFrame [MEMBER_NOCOMBAT] or unitFrame.isWidgetOnlyMode) then
 			if unitFrame.isWidgetOnlyMode then
 				unitFrame:SetAlpha (1)
@@ -1148,6 +1158,7 @@ local class_specs_coords = {
 			unitFrame.BuffFrame:SetAlpha (1)
 			unitFrame.BuffFrame2:SetAlpha (1)
 			
+			Plater.EndLogPerformanceCore("Plater-Core", "Update", "CheckRange")
 			return
 		
 		--the unit is friendly or not using range check and non targets alpha
@@ -1163,6 +1174,8 @@ local class_specs_coords = {
 			
 			plateFrame [MEMBER_RANGE] = true
 			unitFrame [MEMBER_RANGE] = true
+			
+			Plater.EndLogPerformanceCore("Plater-Core", "Update", "CheckRange")
 			return
 		end
 		
@@ -1202,6 +1215,7 @@ local class_specs_coords = {
 		
 		if not rangeChecker then
 			rangeChecker = function (unit)
+				Plater.EndLogPerformanceCore("Plater-Core", "Update", "CheckRange")
 				return (LibRangeCheck:GetRange(unit) or 0) < (rangeCheckRange or 40)
 			end
 			Plater.GetSpellForRangeCheck()
