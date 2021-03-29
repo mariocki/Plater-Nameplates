@@ -6149,7 +6149,7 @@ end
 						Plater.SetFontOutlineAndShadow (plateFrame.ActorTitleSpecial, plateConfigs.big_actortitle_text_outline, plateConfigs.big_actortitle_text_shadow_color, plateConfigs.big_actortitle_text_shadow_color_offset[1], plateConfigs.big_actortitle_text_shadow_color_offset[2])
 					else
 						plateFrame.ActorTitleSpecial:Hide()
-						-- ARP don't even show Neutral names
+						-- ARP don't even show names for Neutral NPCs with no title
 						if (plateFrame [MEMBER_REACTION] == UNITREACTION_NEUTRAL) then
 							plateFrame.unitFrame:Hide()
 						end
