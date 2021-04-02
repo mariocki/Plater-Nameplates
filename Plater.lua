@@ -737,7 +737,19 @@ Plater.DefaultSpellRangeListF = {
 	[72] = 30, --> warrior fury
 	[73] = 30, --> warrior protect
 	
-	[1444] = 40, --> DAMAGER (low-level chars)
+	-- low-level (without spec)
+	[1444] = 40, --> Initial SHAMAN
+	[1446] = 40, --> Initial WARRIOR
+	[1447] = 40, --> Initial DRUID
+	[1448] = 40, --> Initial HUNTER
+	[1449] = 40, --> Initial MAGE
+	[1450] = 40, --> Initial MONK
+	[1451] = 40, --> Initial PALADIN
+	[1452] = 40, --> Initial PRIEST
+	[1453] = 40, --> Initial ROGUE
+	[1454] = 40, --> Initial WARLOCK
+	[1455] = 40, --> Initial DK
+	[1456] = 40, --> Initial DH
 }
 
 local class_specs_coords = {
@@ -5676,11 +5688,13 @@ end
 									--check if this isn't a false positive where the mob target another unit to cast a spell
 									local hasTankAggro = false
 									for tankName, _ in pairs (TANK_CACHE) do
-										local threatStatus = UnitThreatSituation (tankName, self.displayedUnit)
-										if (threatStatus and threatStatus >= 2) then
-											--a tank has aggro on this unit, it is a false positive
-											hasTankAggro = true
-											break
+										if UnitExists(tankName) then
+											local threatStatus = UnitThreatSituation (tankName, self.displayedUnit)
+											if (threatStatus and threatStatus >= 2) then
+												--a tank has aggro on this unit, it is a false positive
+												hasTankAggro = true
+												break
+											end
 										end
 									end
 									
