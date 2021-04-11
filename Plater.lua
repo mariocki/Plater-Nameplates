@@ -6594,7 +6594,7 @@ end
 	end
 
 	--updates the level text and the color
-	function Plater.UpdateLevelTextAndColor (levelString, unitId) --private
+	function Plater.UpdateLevelTextAndColor (levelString, unitId)
 		--level text
 		local level = UnitLevel (unitId)
 		if (not level) then
@@ -9788,7 +9788,7 @@ end
 			["UpdatePlateText"] = true,
 			["CheckLifePercentText"] = true,
 			["UpdateAllNames"] = true,
-			["UpdateLevelTextAndColor"] = true,
+			--["UpdateLevelTextAndColor"] = true,
 			["UpdatePlateFrame"] = true,
 			["ForceChangeBorderColor"] = true,
 			["UpdatePlateBorders"] = true,
