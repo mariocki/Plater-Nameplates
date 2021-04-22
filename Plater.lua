@@ -6177,7 +6177,7 @@ end
 					-- ARP begin
 					local _allTheThings = AllTheThings
 					if _allTheThings and plateFrame and plateFrame [MEMBER_NPCID] then
-						if _allTheThings:GetQuestsForNPC(plateFrame [MEMBER_NPCID]) == true then
+						if _allTheThings:IsNPCQuestGiver(plateFrame [MEMBER_NPCID]) == true then
 							r, g, b, a = unpack (plateConfigs.quest_color)
 						else
 							r, g, b, a = unpack (plateConfigs.big_actorname_text_color)
@@ -6230,7 +6230,7 @@ end
 					-- ARP begin
 					local _allTheThings = AllTheThings
 					if _allTheThings and plateFrame and plateFrame [MEMBER_NPCID] then
-						if _allTheThings:GetQuestsForNPC(plateFrame [MEMBER_NPCID]) == true then
+						if _allTheThings:IsNPCQuestGiver(plateFrame [MEMBER_NPCID]) == true then
 							r, g, b, a = unpack (plateConfigs.quest_color)
 						else
 							r, g, b, a = unpack (plateConfigs.big_actorname_text_color)
