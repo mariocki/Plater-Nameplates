@@ -9819,6 +9819,28 @@ end
 			["ForceFindPetOwner"] = true,
 			["UpdateBgPlayerRoleCache"] = false,
 			["InitLDB"] = true,
+			["APIList"] = true,
+			["FrameworkList"] = true,
+			["UnitFrameMembers"] = true,
+			["NameplateComponents"] = true,
+			["UpdateOptionsTabUpdateState"] = true,
+			["EnableProfiling"] = false,
+			["DisableProfiling"] = false,
+			["StartLogPerformance"] = false,
+			["StartLogPerformanceCore"] = false,
+			["StartLogPerformanceCore"] = false,
+			["EndLogPerformanceCore"] = false,
+			["DumpPerformance"] = true,
+			["ShowPerfData"] = true,
+			["CheckOptionsTab"] = true,
+			["OpenOptionsPanel"] = true,
+			["TriggerDefaultMembers"] = true,
+			["OpenCopyUrlDialog"] = true,
+			["CreateOptionTableForScriptObject"] = true,
+			["HasWagoUpdate"] = true,
+			["GetWagoUpdateDataFromCompanion"] = true,
+			["UpdateWagoStashData"] = true,
+			["CheckWagoUpdates"] = true,
 		},
 		
 		["DetailsFramework"] = {
@@ -9884,6 +9906,7 @@ end
 
 		--deny messing addons with script support
 		["PlaterDB"] = true,
+		["PlaterDBChr"] = true,
 		["_detalhes_global"] = true,
 		["WeakAurasSaved"] = true,
 	}
