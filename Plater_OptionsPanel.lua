@@ -3922,7 +3922,7 @@ Plater.CreateAuraTesting()
 		DF:SetFontSize (new_buff_string, 12)
 		
 		local new_buff_entry = DF:CreateTextEntry (specialAuraFrame, function()end, 200, 20, "NewSpecialAuraTextBox", _, _, options_dropdown_template)
-		new_buff_entry.tooltip = "Enter the aura name using lower case letters.\n\nYou can add several spells at once using |cFFFFFF00;|r to separate each spell name."
+		new_buff_entry.tooltip = "Enter the aura name using lower case letters or spell-IDs.\n\nYou can add several spells at once using |cFFFFFF00;|r to separate each spell name."
 		new_buff_entry:SetJustifyH ("left")
 		
 		new_buff_entry:SetHook ("OnEditFocusGained", function (self, capsule)
@@ -4617,6 +4617,18 @@ do
 				values = function() return copy_settings_options end,
 				name = "Copy",
 				desc = "Copy settings from another tab.\n\nWhen selecting an option a confirmation box is shown to confirm the copy.",
+			},
+			
+			{
+				type = "toggle",
+				get = function() return Plater.db.profile.plate_config.player.module_enabled end,
+				set = function (self, fixedparam, value) 
+					Plater.db.profile.plate_config.player.module_enabled = value
+					ReloadUI()
+				end,
+				nocombat = true,
+				name = "Module Enabled",
+				desc = "Enable Plater nameplates for the personal bar.\n\n|cFFFFFF00Important|r: Forces a /reload on change.\nThis option is dependent on the client`s nameplate state (on/off)",
 			},
 			
 			{
@@ -7229,7 +7241,19 @@ end
 			values = function() return copy_settings_options end,
 			name = "Copy",
 			desc = "Copy settings from another tab.\n\nWhen selecting an option a confirmation box is shown to confirm the copy.",
-		},	
+		},
+		
+		{
+			type = "toggle",
+			get = function() return Plater.db.profile.plate_config.friendlyplayer.module_enabled end,
+			set = function (self, fixedparam, value) 
+				Plater.db.profile.plate_config.friendlyplayer.module_enabled = value
+				ReloadUI()
+			end,
+			nocombat = true,
+			name = "Module Enabled",
+			desc = "Enable Plater nameplates for friendly players.\n\n|cFFFFFF00Important|r: Forces a /reload on change.\nThis option is dependent on the client`s nameplate state (on/off)",
+		},
 		
 		{
 			type = "toggle",
@@ -8182,6 +8206,18 @@ end
 		
 		{
 			type = "toggle",
+			get = function() return Plater.db.profile.plate_config.enemyplayer.module_enabled end,
+			set = function (self, fixedparam, value) 
+				Plater.db.profile.plate_config.enemyplayer.module_enabled = value
+				ReloadUI()
+			end,
+			nocombat = true,
+			name = "Module Enabled",
+			desc = "Enable Plater nameplates for enemy players.\n\n|cFFFFFF00Important|r: Forces a /reload on change.\nThis option is dependent on the client`s nameplate state (on/off)",
+		},
+		
+		{
+			type = "toggle",
 			get = function() return Plater.db.profile.plate_config.enemyplayer.use_playerclass_color end,
 			set = function (self, fixedparam, value) 
 				Plater.db.profile.plate_config.enemyplayer.use_playerclass_color = value
@@ -9070,7 +9106,6 @@ end
 			name = "Copy",
 			desc = "Copy settings from another tab.\n\nWhen selecting an option a confirmation box is shown to confirm the copy.",
 		},
-		
 		{
 			type = "toggle",
 			get = function() return GetCVarBool ("nameplateShowFriendlyNPCs") end,
@@ -9086,6 +9121,23 @@ end
 			nocombat = true,
 			name = L["OPTIONS_ENABLED"] .. CVarIcon,
 			desc = "Show nameplate for friendly npcs.\n\n|cFFFFFF00Important|r: This option is dependent on the client`s nameplate state (on/off).\n\n|cFFFFFF00Important|r: when disabled but enabled on the client through (" .. (GetBindingKey ("FRIENDNAMEPLATES") or "") .. ") the healthbar isn't visible but the nameplate is still clickable." .. CVarDesc,
+		},
+		{
+			type = "toggle",
+			get = function() return Plater.db.profile.plate_config.friendlynpc.module_enabled end,
+			set = function (self, fixedparam, value) 
+				if (value) then
+					--SetCVar ("nameplateShowFriendlyNPCs", CVAR_ENABLED)
+					Plater.db.profile.plate_config.friendlynpc.module_enabled = true
+				else
+					--SetCVar ("nameplateShowFriendlyNPCs", CVAR_DISABLED)
+					Plater.db.profile.plate_config.friendlynpc.module_enabled = false
+				end
+				ReloadUI()
+			end,
+			nocombat = true,
+			name = "Module Enabled",
+			desc = "Enable Plater nameplates for friendly NPCs.\n\n|cFFFFFF00Important|r: Forces a /reload on change.\nThis option is dependent on the client`s nameplate state (on/off)",
 		},
 
 		{
@@ -10098,6 +10150,18 @@ end
 				values = function() return copy_settings_options end,
 				name = "Copy",
 				desc = "Copy settings from another tab.\n\nWhen selecting an option a confirmation box is shown to confirm the copy.",
+			},
+			
+			{
+				type = "toggle",
+				get = function() return Plater.db.profile.plate_config.enemynpc.module_enabled end,
+				set = function (self, fixedparam, value) 
+					Plater.db.profile.plate_config.enemynpc.module_enabled = value
+					ReloadUI()
+				end,
+				nocombat = true,
+				name = "Module Enabled",
+				desc = "Enable Plater nameplates for enemy NPCs.\n\n|cFFFFFF00Important|r: Forces a /reload on change.\nThis option is dependent on the client`s nameplate state (on/off)",
 			},
 			
 			{type = "blank"},
@@ -12635,7 +12699,7 @@ end
 				Plater.db.profile.click_space[1] = value
 				Plater.UpdatePlateClickSpace (nil, true)
 			end,
-			min = 50,
+			min = 1,
 			max = 300,
 			step = 1,
 			name = "Width",
@@ -12668,7 +12732,7 @@ end
 				Plater.db.profile.click_space_friendly[1] = value
 				Plater.UpdatePlateClickSpace (nil, true)
 			end,
-			min = 50,
+			min = 1,
 			max = 300,
 			step = 1,
 			name = "Width",
@@ -13071,7 +13135,15 @@ end
 		{type = "blank"},
 
 		{type = "label", get = function() return "Unit Widget Bars:" end, text_template = DF:GetTemplate ("font", "ORANGE_FONT_TEMPLATE")},
-	
+		{
+			type = "toggle",
+			get = function() return Plater.db.profile.usePlaterWidget end,
+			set = function (self, fixedparam, value) 
+				Plater.db.profile.usePlaterWidget = value
+			end,
+			name = L["OPTIONS_ENABLED"],
+			desc = "Enabled",
+		},
 		{
 			type = "range",
 			get = function() return Plater.db.profile.widget_bar_scale end,
