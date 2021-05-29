@@ -188,9 +188,9 @@ do
 	}
 	
 	PlaterScriptLibrary ["Combo Points"] = {
-		Revision = 4,
+		Revision = 6,
 		ScriptType = "hook",
-		String = "vVvBVTnos4FlNVpC2hIvTDAY2gC9aCts3MIUTbrPyXHSr1ms02cvwuGIYPPlQ)TFdj17IYIsrEpCWijmsKZ8WzgoZWH0wtTU1YCQL55Knpq2T4AIRplC3I7U2dXW07TmzpfGTmxtiFZY8yltO1J7wyl7DqCVrpq2I3TGTg(LpAdoGp4DlwsO7wCbnY1z3I3HPipON(q7BiRIWHgwMZS(00Jp5LZo1Y8eO5Pto(Kt)LJpEML5lTmV6hUBio4XZ)bmsIVL5VaDXY8uRpn7e41VMd8pLXSZPy4VowMlJ8TzUe)DlggI9wE0Ufr(USRCIB8okmgOn2F7TOh8WJ29HDlI)K2A8yAKpFA6hYOr2mc9VL)L5E(UfUGaa)DSDeW9Dli(EpX)TnaPhxJ95tz4bH2u3ag8ILXIjUaD3cGlHg5bagKpFG)PWCBUJt)nZSxJTbw7ciXhZHCuGJGlcCH2qI8JbAjTCiO69ZOeNadt4LXhrHmWM5jm9wKh2N9LyI(VZWJOpYNpsWTCel5tAFL9tyvkSjNlW1WCZjUOQY0Re8sflgCZsHn9vH3IORWSyBrFclN0Z4QqtqY2m8YaMyCNXxwKhCnoFcv17CtoVqCly)7DDWAiBYzDLieoFnYF1bX4ITMVYiN7a()kSXSJOum3iJjbX)xQZ6bnKkntDFSmLRU4UOFK)hj46h92HvUVFXyr5WEKif8iEdEdeYPNmB1wPvyf0f4Kya)VdffTmKEE7xtJXJ3F4HkXhIJ6j6DqmWSfoz4l)fieAWdCggGTDrEU)aja5h6qmG84meLMdcZDdoxSwpiUtcVtaJc2vxiS3SBXVIz3c0unRlyvCEwQbphfamDWmMR)QWSN5rSLPqzVMqdf46pRUS7ph8aHXiBgKNjgRXip263IOWthWib83ob(z2l)5rz04NQMEXSn09h4Az6JUoS1IxoD2rvF9AS7Q1S6FFiWbPGEQMOHH)olIwpGEaz)TvuWCX5wzpfD8U7UYhYQDjYg)hx)X5)NlV5D3m)3U8pohSqc)8wmf0(58tD)9h1aLpNqOoXGyYlMo7vCr604gtNK2A2mERFE0(c5N8Xofa9n0lq58q)4eC(Q4gVkb5V(0YaFFALLCBTpI3I9KkZjtMOUpMmkIHeDAWAW2yW(YKB84aQ7w(sX0h5qQo7GLmWIoCL0wfmK7YXpjNegFXMwXUJLp)uj3e(BQ1BNJcVD7HNT05tnOOugxR4bSrfLiz(WfX0b)VR83iCmM4OVjduvW4Hixph1I(epwGtWs4GM(oH0IiNbkMMI8tkL9HCdQLIvwBYiLmcxtcLdqiGLBDm()hoqGAUdsFxV8orhvpztPx5G3HxtiE1AeL8PHzLy8zqUwYuxgep3XFMjMzkDrpuegWq4WEpYJ6FZ4XxGzixVqbLFKq)2zZdc8EYKbMJiQZBb3Rousq(9wwvjpESd(HOvzMwCy1n4G8D3isajSrRgIpFfkFBdZtgKq0MlmFk12NWjVdRGK6baj5XNoP0LBZ7Y(hHs)kqMantqXYKusCg434AeFJwdhLVTbpFY0jWzxfETK(dh14QNYFAlVmH57qnKmf3uqRvQ7hE1TTp9yUE2ifM29MnsOO2B)LyJuWi)aBJuKx9Ins(6FOVMJZ6EtZPEEhVxonr2ZZu0wewBEM)TsZMS0b1YqKpgHfyJ9nJWgvDwkJWD25fb37JEOaImQKf8rk9)kJsRb(vZ2I8SmLhicZXZeykF7sgtJ300K4Nm9qXxKxWAur(ACYHKHPt0zPmCQXSSFRjV11mseSRnMrvxv(SnJkqYJuU8VNK2L5KkZQKFeMxhk(QWSAAd8RJEGuUHG09dOlveNFKlOUfiDIyBFAyJLSrtnYTV(umBKllfzfZt7mjPyrrqokUsjgYAEObHyU(HyktDcVHa9w2kI0WEjuUbfnzI2IE1vFzzS5A6ZgkvcdY6(anqrfIZvez0mPYqgv63ZG2IILieUbi(5BudxK1uzuxzuFynPKWxlx(nCGnMxePb9PUwD5QQvxJOm(M(0bcvOCnk6k97zq76v0kkE2OEroQek9HPGsc3btHQ0rzwSTykRH3vJRcNdjQUn2CcP8026cDv7BQ6t1GuQn9R(0(WiPsU8dx2FHTX7v6U3Yk1uPR(lOyt1w32UekSvInf7YSfvnDFsG3LRs6dZkR(OoqLKATpmxL3hPd(Y2QylVfd1fGqQv(cOvIpd7HdK1mNNq2L(rBmep)2NckOl7uDgtZDuMJB6m4wcd5vWqr1zjuZuHxE6SXkiUAJV7CVVpw1lkwdmj(xVPKyS1vHHFNLYNjo2NdAh9jqwj4lkes9t3AiLM6Ar6vSAq8DQPt1GAGOfcMWOr42tr9hHEvVuBYI1l0xnkAh3WUOPpWk5ILf(qOK1nJHdRwUXIu2bpBQJd1p(ZvCdlu7jm9kc97PN8VmgRHZdgbuYsxG6ItH8R2e)LURmW(4np5hyhFve(QRp3qfXUB69DpeYVH(EpefjMlqw(y6wSJjK6V0iAy5P54KKWJVWd)ZcytKr8lkb3Uv(K4JYwEBw4HS23nZS5mJQg1RueLobYKdmo5q4w29m(ILVLe4J6gXEF81nz4SjDHcN7Hr05EEnNHtPKm(7PxnNwKtrIW7nP3ShTsEyFZ)K94LUjwjHhnQNoWK9ztOVWsDMt6i5unsqOv9IY1YXRVIVJUUljcS7yAO2nNcQw2qIJpeibhoTnWEggkuvbp8s2G9uyvEjGs6tb)TVyMMv(UDPd1EycIUXtVNJtk3lsfGQlm7NJWop(pmNBTIBNFt36OwquT2WOM5VmESle3xCJrXpRV5ap3lRDHl(PfZY8v8VlkYB7f0cEaVusbYM28lOh)9xk3YL1BTmV4MVC1f8g385F9lxcnG(Tbf8vxNq5GOepSSvW2G8egTCP73J7dymkBHHuPI4vZlJa8BBM4B2ZKJ58jJ3m(Bze7TyAiKlO1NE9KjtMce2XH)DSrMeNLjjquMjbXyww)3",
+		String = "vVvBVTnos4FlNVpC2hIvTCEztdUEaUoPBDrBIrKlkwKnkMwI2wOYscs0jnTx8V9BiPExuwukY7HdcjMwICMhoZWzgoIwxvFMUMQU2y3nlC3nFQRLdjy387MAJiy)711ip7H11w76(DDTJ11GwpTBUbV3EH9gTW9r8U5K1W)CqBWE0bVB(sx)DZV0FRL5U5Fa7JSHE6aTV1D1wCGIU2q9Rvp(0tgEMU2PqZZgQ(2Jpv9eGnNORn5NwBCnX9h9tyKUo6A)g0fDTZ0VE45WJFlf4xNWSX(y4ttDTLBDmiwUo7M3naBV8ODZ36yrMyg24d(WyG2yNhNHwyJ7T7t7MhEf3QFF)To0PPtaXFRbX1)VL(HPU)U5wGaa)dSXwG77M76y)m9)gaKEAn2HoLHBey4B5rGhSmumrfO7MdCjqjnaWG85t0RmZTrMMT3mZyn2ayTfGehmfYB9mzCHHl0g3ToHanNwoau9ojuIsGUr8s5ZOacyZ8m2FgYg7q(Air)3j4H1h(97X4wkIfDf3xE)ywLmBYrmC1n1CIkQkm9YbVyXIc1SKztpjygYFfMeAl64ssj9uMeObs2QHxcWyJ7c6YI0GRY5tGOENAYzhGRb7)OLjwcztkRRiHW41iNvheJlYA6kJuUdOFLzJzS13htnYiCq8)L6SwqdjsZu2LUgF1f1f9t0p4GR26nOj4vnQPIIskmz7Aq9r7rzWmWT)U5VJ1LsxELQNmft6rcdTZ4B(Y7V5HP3m56zADc7Zbt9UFTvwXDgbFgxT3I3aXYAP1dsBnKzP5L4OGl)Vdfzn54U0BSnxj(k2FCNcbEcdNY6TxiWmyEVO(vyieAqJih4HnSq2w)eXa5NAqWL04mafNCdXAdovqCBiGweVJaJa2vwSryjYVJjZaAkM1zSkgNKZXRrbathmHy5SkOW6EKJXAx)agU(vXfA)QZcxcXDtN0mrzngztw)EKpC3oexp6tha)n8KxokHgViA6fY2aRFIlLPpzzswZEO6WJk(41yRvRjL)8aGdCbTQKOHG)bzRF5aAbY47R8bZfZz8EY64D3nXbsxEjYa)Nt)8O)4QB)WTJ(Yv)5yWcj4MhX(G2pLNP7V)OkO8yxxFZqqm4nQdpNksvdBOoiU1WH0wVC0(YLi6YigaTn0Zq50q)4iCEEyJZJq(BplpWFjBWLVDZ3Ey6T38PRgp7Hjxc39)8US38lJMC9NNC9vLfyOkn5HxJwPM93IelV98eD8zNaFEc9Zx2dnl)jho1CLQB1bdInmhi7m6LkJshU0Cj1HZNXpIT5ROhmyG4(Or8reeRtDwdoi6SV9j0VVNV1Ju)XX3Y0Tikb)MGNxCHnfXyinUJtugVeQhxPYmmuQ9IqUXc6uAiptbH82dpRzeOsqrU85xrZtdLvIKeiNLkheeELZgw0XOO9vAglagl2AzBkw0hf2cIeMdh(XpJjTC5ZabttwQS5s6Kx(JCjmvAoO5mcx7gWhataZlmr4372HHAAushl70rs7vozJPx(m4cM66AxQru0vfZk24tGCPKPS0iFTJ)cnmrJhNUllxafwu7EnX3x)(xIjil7agLFY1)7xmYZZ(zncyoI8nFp4j2031lDLlkQK733eVy7QetlkSAgCqowByzHguPvJRdDfkDtPJIget0MkxVyQTpHtAhwErvBcY0NoDIPl1M3I8pc4(vG0bRMGSLjXK4cWVXueDB8D7LUTcDtfXtGlMemLt)U9QC1t(R6Ylny(2vcjt2Om1wPUF4vwrfKJ5YzJKzA3A2ibSk7(xInsgJ8dSnswE1k2iPRUM8AokRBnnN45D4g6LezVotrdwyTrj(3YnBsssukdr6yywGv23ecRu0zjpc3fJZcUpUDrgePuih5Je6)LhLwc8lMTz5zEk3HfMJMjGkDpZkQH7CEq4Dupu8fz7TgLLVkNEizy8eDymdvvgM8Fj5TSMrSGD1XmQ4QYxTzugsEKWL)TK0opNezwf9hZ86qXxbMvQvWVg6bs4gcI3pGSuH92jTa1ndPdyB7tcBSOnAkrU9LNIzLCzjlRyAANrjfZQe2rHLltHx4ljieXYja7teNWBaqVL1IivSxcHBqrsMiTOxCbBwgAUgFVUCLqNKU3rcuuG4ufrcnJkQKsH(9kOnRekmHRhI(2ZkHl8kT0RPmQnSMes4P8LFD7yGPLyQtBQRfxmRs11iFcDtFYaHcuUefDH(9kOD5kAbLuRxRihfcL2WuqiHBGPqr6iml2AmLLW7QYKGrqIQpgAoHe(UCBcDf7BQ4DLGuIn9lE32WiPqU8Dx2EHTX7v6U3YkvvPR(lOytLw32MekSwInb7YSgvnDFsGpKQs6DtkREVgqLOAT3nvL37jd(s2QynpJmLfGiiQC2PjqhEzZ7WE7KSdzW(8j1V)xbLA4bSi9yVYz7gLPrNUH0McnQmLXPEYtrowamZLGSZyNj6vruIKGwD7KXYiUyB37SUVnCAWQ1dmj(xVlNwO2fXHEG6sNip2HcAt5jqsf8ZkeIDZxBifN5Bw6LTys0n6jtXKQGOzIfr83IRpfLFeYv8tPjlwUiNLOOnTcAIM(aRKZwv5dHsw2eooSA5kRXzd8Sjomw7eoqWP0rSNW4dw23Ip9i8q0kMlu88DxAbuN9smFWW1zP1kfSdEZZoEgHhNLhSCOgQiYDQ3x7iqXHq(c6hTquKqUaBsa7)i2ud25a3iQB(Pz)OC4dp0m)ZmyJLq9BYb3Mv9LW3eo)errdzTVJnC1jwvmQxUikncKrVV5O3H3YMNWyO8nNaVxZi2hdpYsDhoOjuySng5pY2U6eKYLKXFp(4DvJCkIeEVl(0HjvYd7B(hTfX49aZjCVET07BzF2eYlSeN5KmsorJeeAfpSL1C8YR4BOR7CIaJgMgQr1PGkLne7TpYphXQ1nWEcgYuucB8ssN9uxw6MeI6tg)TVzOKfoVEPdvFycIU(Q3tXPp1lsbGklmBN3aEA8FyET3c(PJu1HwQgevQ9Bkz(l97BbX9zN6y8R6N1YR9xsq2J2orx7C6puk(HfdAb3GwjkpEtd6P)J(8R4B5s)96AxE7xNCjTXT387F9kOb0VniVhSmd4dY31gZB59OxActpeASFozdoMo(eAsheyDY7fgYTAlT6GjueTCP1pynHVqCnEe7ha5cQF9WbNoqfEUPj9hagpjoDnxpwvQchG()9p",
 		Enabled = false,
 	}
 	
@@ -562,7 +562,74 @@ do
 			end
 		end
 	})
+	
+	--#14 cleanup of npc_cache, npc_colors of string-indexed values
+	tinsert (PlaterPatchLibrary, {
+		Notes = {
+			"- Cleanup wrong indexes in npc_cache and npc_colors."
+		},
+		Func = function()
+			--clean up npc_cache
+			local npc_cache = Plater.db.profile.npc_cache
+			local copy = DetailsFramework.table.copy({},npc_cache)
+			for n,v in pairs(copy) do 
+				if tonumber(n) then
+					npc_cache[n] = nil
+					npc_cache[tonumber(n)] = v
+				end
+			end
+			
+			--clean up npc_colors
+			local npc_colors = Plater.db.profile.npc_colors
+			local copy = DetailsFramework.table.copy({},npc_colors)
+			for n,v in pairs(copy) do 
+				if tonumber(n) then
+					npc_colors[n] = nil
+					npc_colors[tonumber(n)] = v
+				end
+			end
+		end
+	})
 
+	--#15 create a UID for script that doesn't have one
+	--[=[ --disabled atm, might be enabled at the release of the Comm Message feature
+	tinsert (PlaterPatchLibrary, {
+		Notes = {
+			"- Creating UID for all scripts."
+		},
+		Func = function()
+			local needUID = {}
+
+			local hookData = Plater.db.profile.hook_data
+			for i = 1, #hookData do
+				local hook = hookData [i]
+				if (not hook.UID) then
+					tinsert(needUID, hook)
+				end
+			end
+
+			local scriptData = Plater.db.profile.script_data
+			for i = 1, #scriptData do
+				local script = scriptData [i]
+				if (not script.UID) then
+					tinsert(needUID, script)
+				end
+			end
+
+			--create the UIDs inside a onupdate loop, otherwise the ids will have the same value for being created at the same time
+			local f = CreateFrame("frame", "PlaterPatcherFrameUID", UIParent)
+			f:SetScript("OnUpdate", function()
+				local script = tremove(needUID)
+				if (script) then
+					local newUID = Plater.CreateUniqueIdentifier()
+					script.UID = newUID
+				else
+					f:SetScript("OnUpdate", nil)
+				end
+			end)
+		end
+	})
+	--]=]
 end
 
 
