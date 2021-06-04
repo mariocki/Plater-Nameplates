@@ -46,6 +46,7 @@ local pairs = pairs
 local rawset = rawset
 local rawget = rawget
 local error = error
+local setfenv = setfenv
 local InCombatLockdown = InCombatLockdown
 local UnitIsPlayer = UnitIsPlayer
 local UnitClassification = UnitClassification
@@ -97,11 +98,11 @@ local Plater = DF:CreateAddOn ("Plater", "PlaterDB", PLATER_DEFAULT_SETTINGS, { 
 Plater.playerGuild = select(1, GetGuildInfo("player")) or ""
 
 Plater.versionString = GetAddOnMetadata("Plater_dev", "Version") or GetAddOnMetadata("Plater", "Version")
-Plater.fullVersionInfo = Plater.versionString .. " - DetailsFramework v" .. select(2,LibStub:GetLibrary("DetailsFramework-1.0"))
+Plater.fullVersionInfo = Plater.versionString .. " - DetailsFramework v" .. select(2,LibStub:GetLibrary("DetailsFramework-1.0")) .. " - WoW " .. GetBuildInfo()
 function Plater.GetVersionInfo(printOut)
 	-- update, just in case...
 	Plater.versionString = GetAddOnMetadata("Plater_dev", "Version") or GetAddOnMetadata("Plater", "Version")
-	Plater.fullVersionInfo = Plater.versionString .. " - DetailsFramework v" .. select(2,LibStub:GetLibrary("DetailsFramework-1.0"))
+	Plater.fullVersionInfo = Plater.versionString .. " - DetailsFramework v" .. select(2,LibStub:GetLibrary("DetailsFramework-1.0")) .. " - WoW " .. GetBuildInfo()
 	if printOut then print("Plater version info:\n" .. Plater.fullVersionInfo) end
 	return Plater.fullVersionInfo
 end
@@ -247,7 +248,8 @@ Plater.HookScripts = { --private
 	"Name Updated",
 	"Load Screen",
 	"Player Logon",
-	"Comm Message",
+	"Receive Comm Message",
+	"Send Comm Message",
 }
 
 Plater.HookScriptsDesc = { --private
@@ -276,7 +278,8 @@ Plater.HookScriptsDesc = { --private
 	["Name Updated"] = "Executed when the name of the unit shown in the nameplate receives an update.",
 	["Load Screen"] = "Run when a load screen finishes.\n\nUse to change settings for a specific area or map.\n\n|cFF44FF44Do not run on nameplates|r.",
 	["Player Logon"] = "Run when the player login into the game.\n\nUse to register textures, indicators, etc.\n\n|cFF44FF44Do not run on nameplates,\nrun only once after login\nor /reload|r.",
-	["Comm Message"] = "Executed when a comm is received, a comm can be sent using Plater.SendComm(payload)."
+	["Receive Comm Message"] = "Executed when a comm is received, a comm can be sent using Plater.SendComm(payload) in 'Send Comm Message' hook.",
+	["Send Comm Message"] = "Executed on an internal timer for each mod. Used to send comm data via Plater.SendComm(payload).",
 }
 
 -- ~hook (hook scripts are cached in the indexed part of these tales, for performance the member ScriptAmount caches the amount of scripts inside the indexed table)
@@ -300,7 +303,9 @@ local HOOK_UNITNAME_UPDATE = {ScriptAmount = 0}
 local HOOK_LOAD_SCREEN = {ScriptAmount = 0}
 local HOOK_PLAYER_LOGON = {ScriptAmount = 0}
 local HOOK_MOD_INITIALIZATION = {ScriptAmount = 0}
-local HOOK_COMM_MESSAGE = {ScriptAmount = 0}
+local HOOK_COMM_RECEIVED_MESSAGE = {ScriptAmount = 0}
+local HOOK_COMM_SEND_MESSAGE = {ScriptAmount = 0}
+local HOOK_NAMEPLATE_DESTRUCTOR = {ScriptAmount = 0}
 
 local PLATER_GLOBAL_MOD_ENV = {}  -- contains modEnv for each mod, identified by "<mod name>"
 local PLATER_GLOBAL_SCRIPT_ENV = {} -- contains modEnv for each script, identified by "<script name>"
@@ -2055,27 +2060,36 @@ local class_specs_coords = {
 		end
 	end
 	
+	function Plater.SetNameplateScale(unitFrame, scale)
+		scale = tonumber(scale)
+		unitFrame.nameplateScaleAdjust = scale and (scale > 0) and scale or 1
+		if (DB_USE_UIPARENT) then
+			Plater.UpdateUIParentScale (unitFrame.PlateFrame)
+		else
+			unitFrame:SetScale (unitFrame.nameplateScaleAdjust)
+		end
+	end
+	
 	--when using UIParent as the parent for the unitFrame, this function is hooked in the plateFrame OnSizeChanged script
 	--the goal is to adjust the the unitFrame scale when the plateFrame scale changes
 	--this approach also solves the issue to the unitFrame not playing correctly the animation when the nameplate is removed from the screen
 	--self is plateFrame, w, h aren't reliable
 	function Plater.UpdateUIParentScale (self, w, h) --private
-		if (self.unitFrame) then
+		local unitFrame = self.unitFrame
+		if (unitFrame) then
 			local defaultScale = self:GetEffectiveScale()
 			--local defaultScale = UIParent:GetEffectiveScale()
 			
 			if (defaultScale < 0.4) then
 				--assuming the nameplate is in process of being removed from the screen if the scale if lower than .4
-				self.unitFrame:SetScale (defaultScale)
+				unitFrame:SetScale (defaultScale)
 			else
 				--scale (adding a fine tune knob)
 				local scaleFineTune = max (Plater.db.profile.ui_parent_scale_tune, 0.3)
 				
 				--@Ariani - March, 9
-				self.unitFrame:SetScale (defaultScale * scaleFineTune)
-				
-				--@Tercio
-				--self.unitFrame:SetScale (Clamp (defaultScale + scaleFineTune, 0.01, 5))
+				unitFrame:SetScale (defaultScale * scaleFineTune * (tonumber(unitFrame.nameplateScaleAdjust) or 1))
+
 			end
 		end
 	end
@@ -3353,6 +3367,8 @@ local class_specs_coords = {
 				HOOKED_BLIZZARD_PLATEFRAMES[tostring(plateFrame.UnitFrame)] = true
 				
 			end
+			
+			unitFrame.nameplateScaleAdjust = 1
 			
 			if (DB_USE_UIPARENT) then
 				plateFrame:HookScript("OnSizeChanged", Plater.UpdateUIParentScale)
@@ -9775,13 +9791,13 @@ end
 			end
 		end,
 		
-		ScriptRunCommMessage = function(self, scriptInfo, source, ...)
-			local modName = scriptInfo.GlobalScriptObject.DBScriptObject.Name
-			Plater.StartLogPerformance("Mod-RunHooks", modName, "Comm Message")
-			local okay, errortext = pcall (scriptInfo.GlobalScriptObject ["Comm Message"], self, self.displayedUnit, self, scriptInfo.Env, PLATER_GLOBAL_MOD_ENV [scriptInfo.GlobalScriptObject.DBScriptObject.scriptId], source, ...)
-			Plater.EndLogPerformance("Mod-RunHooks", modName, "Comm Message")
+		ScriptRunCommMessageHook = function(globalScriptObject, hookName, source, ...)
+			local modName = globalScriptObject.DBScriptObject.Name
+			Plater.StartLogPerformance("Mod-RunHooks", modName, hook)
+			local okay, errortext = pcall (globalScriptObject [hookName], PLATER_GLOBAL_MOD_ENV [globalScriptObject.DBScriptObject.scriptId], source, ...)
+			Plater.EndLogPerformance("Mod-RunHooks", modName, hookName)
 			if (not okay) then
-				Plater:Msg ("Mod |cFFAAAA22" .. modName .. "|r code for |cFFBB8800" .. "Comm Message" .. "|r error: " .. errortext)
+				Plater:Msg ("Mod |cFFAAAA22" .. modName .. "|r code for |cFFBB8800" .. hookName .. "|r error: " .. errortext)
 			end
 		end,
 		
@@ -9916,7 +9932,7 @@ end
 					if (type (value) == "table") then
 						t1 [key] = t1 [key] or {}
 						-- add hashID to the hook-data
-						--t1 [key].scriptId = tostring(value)
+						t1 [key].scriptId = tostring(value) -- keep this internal hashed
 
 						--create UID if it does not exist --TODO maybe not needed in the future
 						local uID = value.UID
@@ -9931,7 +9947,6 @@ end
 							--value.UID = uID -- TODO permanently set UID
 							t1 [key].UID = uID -- TODO temporary volatile for now
 						end
-						t1 [key].scriptId = uID -- this needs to stay for now, maybe switch it to UID in all places later or use the above again?
 						
 						DF.table.copy (t1 [key], t2 [key])
 					else
@@ -10042,7 +10057,6 @@ end
 			["WipeHookContainers"] = true,
 			["GetContainerForHook"] = true,
 			["CurrentlyLoadedHooks"] = true,
-			["DestructorScriptHooks"] = true,
 			["RunDestructorForHook"] = true,
 			["CompileHook"] = true,
 			["CompileScript"] = true,
@@ -10137,6 +10151,7 @@ end
 			["GetNpcID"] = false,
 			["ForceTickOnAllNameplates"] = true,
 			["UpdateUIParentScale"] = true,
+			["SetNameplateScale"] = false,
 			["UpdateUIParentLevels"] = true,
 			["UpdateUIParentTargetLevels"] = true,
 			["RefreshTankCache"] = true,
@@ -10160,6 +10175,7 @@ end
 			["EndLogPerformanceCore"] = false,
 			["DumpPerformance"] = true,
 			["ShowPerfData"] = true,
+			["StoreEventLogData"] = true,
 			["CheckOptionsTab"] = true,
 			["OpenOptionsPanel"] = true,
 			["TriggerDefaultMembers"] = true,
@@ -10172,7 +10188,9 @@ end
 			["GetVersionInfo"] = false,
 			["versionString"] = false,
 			["fullVersionInfo"] = false,
-			["DispatchCommMessageHookEvent"] = true,
+			["DispatchCommReceivedMessageHookEvent"] = true,
+			["DispatchCommSendMessageHookEvents"] = true,
+			["VerifyScriptIdForComm"] = true,
 			["MessageReceivedFromScript"] = true,
 			["CreateUniqueIdentifier"] = false,
 			["GetScriptFromUID"] = true,
@@ -10324,7 +10342,7 @@ end
 	local platerModEnvironment = {} -- needed for DF:SetEnvironment to have a common mod/script environment in Plater
 	local platerModEnvironment2 = getShadowTable()
 	local function SetPlaterEnvironment(func)
-		_G.setfenv(func, platerModEnvironment2)
+		setfenv(func, platerModEnvironment2)
 	end
 
 	function Plater.WipeAndRecompileAllScripts (scriptType, noHotReload)
@@ -10361,7 +10379,9 @@ end
 		HOOK_LOAD_SCREEN,
 		HOOK_PLAYER_LOGON,
 		HOOK_MOD_INITIALIZATION,
-		HOOK_COMM_MESSAGE,
+		HOOK_COMM_RECEIVED_MESSAGE,
+		HOOK_COMM_SEND_MESSAGE,
+		HOOK_NAMEPLATE_DESTRUCTOR,
 	}
 
 	function Plater.WipeHookContainers (noHotReload)
@@ -10419,8 +10439,12 @@ end
 			return HOOK_LOAD_SCREEN	
 		elseif (hookName == "Player Logon") then
 			return HOOK_PLAYER_LOGON
-		elseif (hookName == "Comm Message") then
-			return HOOK_COMM_MESSAGE
+		elseif (hookName == "Receive Comm Message") then
+			return HOOK_COMM_RECEIVED_MESSAGE
+		elseif (hookName == "Send Comm Message") then
+			return HOOK_COMM_SEND_MESSAGE
+		elseif (hookName == "Destructor") then
+			return HOOK_NAMEPLATE_DESTRUCTOR
 		else
 			Plater:Msg ("Unknown hook: " .. (hookName or "Invalid Hook Name"))
 		end
@@ -10428,8 +10452,6 @@ end
 
 	--store the names of hooks that passed the filters
 	Plater.CurrentlyLoadedHooks = {}
-	--store global objects of hooks with destructors, key is the script object, value is the global object
-	Plater.DestructorScriptHooks = {}
 
 	function Plater.RunDestructorForHook (scriptObject)
 		--check if the script has a destructor script
@@ -10459,7 +10481,13 @@ end
 				for _, plateFrame in ipairs (Plater.GetAllShownPlates()) do
 					if (plateFrame) then
 						
-						local globalScriptObject = Plater.DestructorScriptHooks [scriptObject.scriptId]
+						--local globalScriptObject = HOOK_NAMEPLATE_DESTRUCTOR [scriptObject.scriptId]
+						--does not exist when mod is not loaded through load conditions or similar
+						local globalScriptObject = HOOK_NAMEPLATE_DESTRUCTOR [scriptObject.scriptId] or {
+							HotReload = -1,
+							DBScriptObject = scriptObject,
+							Build = PLATER_HOOK_BUILD,
+						}
 						local unitFrame = plateFrame.unitFrame
 						local scriptContainer = unitFrame:ScriptGetContainer()
 						local scriptInfo = unitFrame:ScriptGetInfo (globalScriptObject, scriptContainer, "Destructor")
@@ -10612,6 +10640,8 @@ end
 		--compile
 		for hookName, code in pairs (scriptCode) do
 			
+			local globalScriptContainer = Plater.GetContainerForHook (hookName)
+			
 			if (type (code) ~= "string") then
 				Plater:Msg ("fail to load mod: " .. (scriptObject.Name or "") .. ".")
 				return
@@ -10621,36 +10651,38 @@ end
 				code = string.gsub(code, "\"NamePlateFullBorderTemplate\"", "\"PlaterNamePlateFullBorderTemplate\"")
 			end
 
-			--find occurences of Plater.SendComm(arg1, arg2, arg3, ...) and replace with Plater.SendComm_Internal(uniqueIdentifier, arg1, arg2, arg3, ...)
-			code = code:gsub("Plater.SendComm%s*%(", "Plater.SendComm(\"" .. scriptObject.UID .. "\", ")
+			--find occurences of Plater.SendComm(arg1, arg2, arg3, ...) and replace with Plater.SendComm_Internal(uniqueIdentifier, arg1, arg2, arg3, ...) or fail to compile for all than "Send Comm Message" and don't replace (use empty dummy)
+			if hookName == "Send Comm Message" then
+				code = string.gsub(code, "Plater.SendComm%s*%(", "Plater.SendComm(" .. globalScriptContainer.ScriptAmount + 1 .. ", \"" .. scriptObject.scriptId .. "\", \"" .. scriptObject.UID .. "\", ")
+			else
+				local foundSendComm = string.find(code, "Plater.SendComm")
+				if foundSendComm then
+					Plater:Msg ("failed to compile " .. hookName .. " for script " .. scriptObject.Name .. ": " .. "Usage of 'Plater.SendComm' is only allowed in 'Send Comm Message' hook.")
+				end
+			end
 			
 			local compiledScript, errortext = loadstring (code, "" .. hookName .. " for " .. scriptObject.Name)
 			if (not compiledScript) then
 				Plater:Msg ("failed to compile " .. hookName .. " for script " .. scriptObject.Name .. ": " .. errortext)
 			else
-				if (hookName == "Destructor") then
-					Plater.DestructorScriptHooks [scriptObject.scriptId] = globalScriptObject
-				else
-					--store the function to execute inside the global script object
-					--setfenv (compiledScript, functionFilter)
-					if (Plater.db.profile.shadowMode and Plater.db.profile.shadowMode == 0) then -- legacy mode
-						DF:SetEnvironment(compiledScript, nil, platerModEnvironment)
-					elseif (not Plater.db.profile.shadowMode or Plater.db.profile.shadowMode == 1) then
-						SetPlaterEnvironment(compiledScript)
-					end
-					
-					globalScriptObject [hookName] = compiledScript()
-					
-					--insert the script in the global script container, no need to check if already exists, hook containers cache are cleaned before script compile
-					local globalScriptContainer = Plater.GetContainerForHook (hookName)
-					tinsert (globalScriptContainer, globalScriptObject)
-					globalScriptContainer.ScriptAmount = globalScriptContainer.ScriptAmount + 1
-					
-					if (hookName == "Constructor") then
-						globalScriptObject.HasConstructor = true
-					elseif (hookName == "Initialization") and needsInitCall then
-						Plater.ScriptMetaFunctions.ScriptRunNoAttach (globalScriptObject, "Initialization")
-					end
+				--setfenv (compiledScript, functionFilter)
+				if (Plater.db.profile.shadowMode and Plater.db.profile.shadowMode == 0) then -- legacy mode
+					DF:SetEnvironment(compiledScript, nil, platerModEnvironment)
+				elseif (not Plater.db.profile.shadowMode or Plater.db.profile.shadowMode == 1) then
+					SetPlaterEnvironment(compiledScript)
+				end
+				
+				--store the function to execute inside the global script object
+				globalScriptObject [hookName] = compiledScript()
+				
+				--insert the script in the global script container, no need to check if already exists, hook containers cache are cleaned before script compile
+				tinsert (globalScriptContainer, globalScriptObject)
+				globalScriptContainer.ScriptAmount = globalScriptContainer.ScriptAmount + 1
+				
+				if (hookName == "Constructor") then
+					globalScriptObject.HasConstructor = true
+				elseif (hookName == "Initialization") and needsInitCall then
+					Plater.ScriptMetaFunctions.ScriptRunNoAttach (globalScriptObject, "Initialization")
 				end
 			end
 		end
@@ -11566,25 +11598,39 @@ end
 		
 	end	
 
-	function Plater.DispatchCommMessageHookEvent(scriptUID, source, ...)
-		if (HOOK_COMM_MESSAGE.ScriptAmount > 0) then
-			for _, plateFrame in ipairs (Plater.GetAllShownPlates()) do
-				if (plateFrame and plateFrame.unitFrame.PlaterOnScreen) then
-					for i = 1, HOOK_COMM_MESSAGE.ScriptAmount do
-						local globalScriptObject = HOOK_COMM_MESSAGE[i]
-						local unitFrame = plateFrame.unitFrame
-
-						if (globalScriptObject.DBScriptObject.UID == scriptUID) then
-							local scriptContainer = unitFrame:ScriptGetContainer()
-							local scriptInfo = unitFrame:ScriptGetInfo(globalScriptObject, scriptContainer, "Comm Message")
-
-							--run
-							unitFrame:ScriptRunCommMessage(scriptInfo, source, ...)
-						end
-					end
+	function Plater.DispatchCommReceivedMessageHookEvent(scriptUID, source, ...)
+		if (HOOK_COMM_RECEIVED_MESSAGE.ScriptAmount > 0) then
+			for i = 1, HOOK_COMM_RECEIVED_MESSAGE.ScriptAmount do
+				local globalScriptObject = HOOK_COMM_RECEIVED_MESSAGE[i]
+				
+				if (globalScriptObject.DBScriptObject.UID == scriptUID) then
+					--run
+					Plater.ScriptMetaFunctions.ScriptRunCommMessageHook(globalScriptObject, "Receive Comm Message", source, ...)
 				end
 			end
 		end
+	end
+	
+	function Plater.DispatchCommSendMessageHookEvents()
+		if (HOOK_COMM_SEND_MESSAGE.ScriptAmount > 0) then
+			for i = 1, HOOK_COMM_SEND_MESSAGE.ScriptAmount do
+				local globalScriptObject = HOOK_COMM_SEND_MESSAGE[i]
+				
+				--run
+				Plater.ScriptMetaFunctions.ScriptRunCommMessageHook(globalScriptObject, "Send Comm Message")
+			end
+		end
+	end
+	
+	function Plater.VerifyScriptIdForComm(scriptIndex, scriptId, uniqueId)
+		if not scriptIndex or not scriptId or not uniqueId then return end
+		
+		local globalScriptObject = HOOK_COMM_SEND_MESSAGE[scriptIndex]
+		if globalScriptObject and globalScriptObject.DBScriptObject and globalScriptObject.DBScriptObject.scriptId and globalScriptObject.DBScriptObject.scriptId == scriptId and globalScriptObject.DBScriptObject.UID and globalScriptObject.DBScriptObject.UID == uniqueId then
+			return true
+		end
+		
+		return false
 	end
 
 	function Plater.DispatchTalentUpdateHookEvent()
