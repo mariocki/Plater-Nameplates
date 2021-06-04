@@ -9427,28 +9427,6 @@ end
 		end
 	end
 	
-	-- ARP BEGIN
-	function Plater.SetNameplateFontOutline (unitFrame, outline)
-		if (unitFrame.unit) then
-			local outline_modes = {"NONE", "MONOCHROME", "OUTLINE", "THICKOUTLINE"}
-			local plateConfigs = DB_PLATE_CONFIG[unitFrame.ActorType]
-			if (outline and outline ~= '' and tContains(outline_modes, outline)) then
-				Plater.SetFontOutlineAndShadow (unitFrame.unitName, outline, plateConfigs.actorname_text_shadow_color, plateConfigs.actorname_text_shadow_color_offset[1], plateConfigs.actorname_text_shadow_color_offset[2])
-			else
-				Plater.SetFontOutlineAndShadow (unitFrame.unitName, plateConfigs.actorname_text_outline, plateConfigs.actorname_text_shadow_color, plateConfigs.actorname_text_shadow_color_offset[1], plateConfigs.actorname_text_shadow_color_offset[2])
-			end
-		end
-	end
-
-	
-	function Plater.ResetNameplateFontOutline (unitFrame)
-		if (unitFrame.unit) then
-			local plateConfigs = DB_PLATE_CONFIG[unitFrame.ActorType]
-			Plater.SetFontOutlineAndShadow (unitFrame.unitName, plateConfigs.actorname_text_outline, plateConfigs.actorname_text_shadow_color, plateConfigs.actorname_text_shadow_color_offset[1], plateConfigs.actorname_text_shadow_color_offset[2])
-		end
-	end
-	-- ARP END
-
 	--set a temporarly size for the healthbar
 	--this value is reset when the nameplate is added to the screen
 	function Plater.SetNameplateSize (unitFrame, width, height)
