@@ -903,9 +903,6 @@ local class_specs_coords = {
 
 	local DB_CAPTURED_SPELLS = {}
 
-	local DB_SHOW_PURGE_IN_EXTRA_ICONS
-	local DB_SHOW_ENRAGE_IN_EXTRA_ICONS
-
 	--store the aggro color table for tanks and dps
 	local DB_AGGRO_TANK_COLORS
 	local DB_AGGRO_DPS_COLORS
@@ -932,10 +929,6 @@ local class_specs_coords = {
 
 	Plater.ScriptUnit = {}
 	local SCRIPT_UNIT = Plater.ScriptUnit
-
-	--if automatic aura tracking and there's auras to manually track (user added into the buff tracking tab)
-	local CAN_TRACK_EXTRA_BUFFS = false
-	local CAN_TRACK_EXTRA_DEBUFFS = false
 	
 	--spell animations - store a table with information about animation for spells
 	local SPELL_WITH_ANIMATIONS = {}
@@ -964,6 +957,8 @@ local class_specs_coords = {
 	local HOOKED_BLIZZARD_PLATEFRAMES = {}
 	local ENABLED_BLIZZARD_PLATEFRAMES = {}
 	local SUPPORT_BLIZZARD_PLATEFRAMES = false
+	local NUM_NAMEPLATES_ON_SCREEN = 0
+	local NAMEPLATES_ON_SCREEN_CACHE = {}
 	
 	local CLASS_INFO_CACHE = {}
 
@@ -3337,6 +3332,11 @@ local class_specs_coords = {
 				return
 			end
 			
+			if not NAMEPLATES_ON_SCREEN_CACHE[unitID] then
+				NAMEPLATES_ON_SCREEN_CACHE[unitID] = true
+				NUM_NAMEPLATES_ON_SCREEN = NUM_NAMEPLATES_ON_SCREEN + 1
+			end
+			
 			--hide blizzard namepaltes
 			--plateFrame.UnitFrame:Hide()
 			Plater.OnRetailNamePlateShow(plateFrame.UnitFrame)
@@ -3649,12 +3649,11 @@ local class_specs_coords = {
 			--can check aggro
 			unitFrame.CanCheckAggro = unitFrame.displayedUnit == unitID and actorType == ACTORTYPE_ENEMY_NPC
 			
-			--tick
+			--tick-setup
 			plateFrame.OnTickFrame.ThrottleUpdate = DB_TICK_THROTTLE
 			plateFrame.OnTickFrame.actorType = actorType
 			plateFrame.OnTickFrame.unit = unitID
 			plateFrame.OnTickFrame:SetScript ("OnUpdate", Plater.NameplateTick)
-			Plater.NameplateTick (plateFrame.OnTickFrame, 10)
 
 			--highlight check
 			if (DB_HOVER_HIGHLIGHT and (not plateFrame.PlayerCannotAttack or (plateFrame.PlayerCannotAttack and DB_SHOW_HEALTHBARS_FOR_NOT_ATTACKABLE)) and (actorType == ACTORTYPE_ENEMY_PLAYER or actorType == ACTORTYPE_ENEMY_NPC)) then
@@ -3664,7 +3663,7 @@ local class_specs_coords = {
 			end
 			
 			--range
-			Plater.CheckRange (plateFrame, true)
+			--Plater.CheckRange (plateFrame, true)
 			
 			--hooks
 			if (HOOK_NAMEPLATE_ADDED.ScriptAmount > 0) then
@@ -3676,6 +3675,9 @@ local class_specs_coords = {
 					unitFrame:ScriptRunHook (scriptInfo, "Nameplate Added")
 				end
 			end
+			
+			--tick
+			Plater.NameplateTick (plateFrame.OnTickFrame, 999)
 			
 			unitFrame.PlaterOnScreen = true
 		end,
@@ -3689,6 +3691,9 @@ local class_specs_coords = {
 			if not plateFrame.unitFrame.PlaterOnScreen then
 				return
 			end
+			
+			NAMEPLATES_ON_SCREEN_CACHE[unitBarId] = false
+			NUM_NAMEPLATES_ON_SCREEN = NUM_NAMEPLATES_ON_SCREEN - 1
 			
 			--debug for hunter faith death
 			--if (select (2, UnitClass (unitBarId)) == "HUNTER") then
@@ -5434,9 +5439,41 @@ end
 	
 	function Plater.ForceTickOnAllNameplates() --private
 		for _, plateFrame in ipairs (Plater.GetAllShownPlates()) do
-			Plater.NameplateTick (plateFrame.OnTickFrame, 1) --GetWorldDeltaSeconds()
+			Plater.NameplateTick (plateFrame.OnTickFrame, 10) --GetWorldDeltaSeconds()
 		end
 	end
+	
+	--FPS meter to spread NameplateTick evenly
+	Plater.FPSData = {
+		startTime = GetTime(),
+		platesUpdatedThisFrame = 0,
+		platesToUpdatePerFrame = 40,
+		frames = 0,
+		curFPS = 0,
+	}
+	
+	function Plater.EveryFrameFPSCheck()
+		-- calculate every .25sec
+		local curTime = GetTime()
+		local curFPSData = Plater.FPSData
+		if (curFPSData.startTime + 0.25) < curTime then
+			curFPSData.curFPS = curFPSData.frames / (curTime - curFPSData.startTime)
+			curFPSData.platesToUpdatePerFrame = math.ceil(NUM_NAMEPLATES_ON_SCREEN / DB_TICK_THROTTLE / curFPSData.curFPS)
+			
+			--ViragDevTool_AddData({curFPSData=curFPSData, NUM_NAMEPLATES_ON_SCREEN = NUM_NAMEPLATES_ON_SCREEN}, "Plater_FPS")
+			
+			curFPSData.frames = 0
+			curFPSData.startTime = curTime
+		else
+			curFPSData.frames = curFPSData.frames + 1
+		end
+		
+		--ViragDevTool_AddData(curFPSData.platesUpdatedThisFrame, "platesUpdatedThisFrame")
+		curFPSData.platesUpdatedThisFrame = 0
+		
+		C_Timer.After( 0, Plater.EveryFrameFPSCheck )
+	end
+	C_Timer.After( 0, Plater.EveryFrameFPSCheck )
 	
 	-- ~ontick ~onupdate ~tick
 	function Plater.NameplateTick (tickFrame, deltaTime) --private
@@ -5448,12 +5485,22 @@ end
 		local profile = Plater.db.profile
 		
 		--throttle updates, things on this block update with the interval set in the advanced tab
-		if (tickFrame.ThrottleUpdate < 0) then
+		local shouldUpdate = tickFrame.ThrottleUpdate < 0
+		local curFPSData = Plater.FPSData
+		if shouldUpdate and not ((1.5 * DB_TICK_THROTTLE + tickFrame.ThrottleUpdate) < 0) then --ensure updates are not posponed indefinetely
+			if curFPSData.platesUpdatedThisFrame >= curFPSData.platesToUpdatePerFrame then
+				shouldUpdate = false
+			end
+		end
+		
+		if (shouldUpdate) then
+			curFPSData.platesUpdatedThisFrame = curFPSData.platesUpdatedThisFrame + 1
+			
 			--make the db path smaller for performance
 			local actorTypeDBConfig = DB_PLATE_CONFIG [tickFrame.actorType]
 			
 			--perform a range check
-			Plater.CheckRange (tickFrame.PlateFrame)
+			Plater.CheckRange (tickFrame.PlateFrame, (deltaTime == 999))
 			
 			--health cutoff (execute range) - don't show if the nameplate is the personal bar
 			if (DB_USE_HEALTHCUTOFF and not unitFrame.IsSelf and not unitFrame.PlayerCannotAttack) then
@@ -5564,6 +5611,8 @@ end
 			
 			--update buffs and debuffs
 			if (DB_AURA_ENABLED) then
+				--Plater.StartLogPerformanceCore("Plater-Core", "Update", "UpdateAuras")
+				
 				if (DB_TRACK_METHOD == 0x1) then --automatic
 					if (tickFrame.actorType == ACTORTYPE_PLAYER) then
 						--update auras on the personal bar
@@ -5588,6 +5637,8 @@ end
 				
 				tickFrame.BuffFrame:SetAlpha (DB_AURA_ALPHA)
 				tickFrame.BuffFrame2:SetAlpha (DB_AURA_ALPHA)
+				
+				--Plater.EndLogPerformanceCore("Plater-Core", "Update", "UpdateAuras")
 			end
 			-- update DBM and BigWigs nameplate auras
 			Plater.UpdateBossModAuras(unitFrame)
@@ -6827,11 +6878,11 @@ end
 	function Plater.UpdateUnitName (plateFrame)
 		local nameString = plateFrame.CurrentUnitNameString
 
-		if (plateFrame.NameAnchor >= 9) then
+		if ( not (plateFrame.IsFriendlyPlayerWithoutHealthBar or plateFrame.IsNpcWithoutHealthBar) and plateFrame.NameAnchor >= 9) then
 			--remove some character from the unit name if the name is placed inside the nameplate
 			Plater.UpdateUnitNameTextSize (plateFrame, nameString)
 		else
-			nameString:SetText (plateFrame [MEMBER_NAME] or plateFrame.unitFrame [MEMBER_NAME])
+			nameString:SetText (plateFrame [MEMBER_NAME] or plateFrame.unitFrame [MEMBER_NAME] or "")
 		end
 		
 		--check if the player has a guild, this check is done when the nameplate is added
@@ -6844,7 +6895,7 @@ end
 
 	function Plater.UpdateUnitNameTextSize (plateFrame, nameString, maxWidth)
 		local stringSize = maxWidth or max (plateFrame.unitFrame.healthBar:GetWidth() - 6, 44)
-		local name = plateFrame [MEMBER_NAME] or plateFrame.unitFrame [MEMBER_NAME]
+		local name = plateFrame [MEMBER_NAME] or plateFrame.unitFrame [MEMBER_NAME] or ""
 		
 		nameString:SetText (name)
 		
@@ -8548,6 +8599,8 @@ end
 			return
 		end
 		
+		Plater.StartLogPerformanceCore("Plater-Core", "Update", "IsQuestObjective")
+		
 		-- reset quest amount
 		plateFrame.QuestAmountCurrent = nil
 		plateFrame.QuestAmountTotal = nil
@@ -8677,16 +8730,13 @@ end
 		plateFrame.QuestInfo = unitQuestData
 		plateFrame.unitFrame.QuestInfo = unitQuestData
 		
-		if isQuestUnit and atLeastOneQuestUnfinished then
-			plateFrame [MEMBER_QUEST] = true
-			plateFrame.unitFrame [MEMBER_QUEST] = true
-			return true
-		else
-			plateFrame [MEMBER_QUEST] = false
-			plateFrame.unitFrame [MEMBER_QUEST] = false
-			return false
-		end
+		local namePlateIsQuestObjective = isQuestUnit and atLeastOneQuestUnfinished
+		plateFrame [MEMBER_QUEST] = namePlateIsQuestObjective
+		plateFrame.unitFrame [MEMBER_QUEST] = namePlateIsQuestObjective
 		
+		Plater.EndLogPerformanceCore("Plater-Core", "Update", "IsQuestObjective")
+		
+		return namePlateIsQuestObjective
 	end
 
 	local update_quest_cache = function()
@@ -10120,6 +10170,7 @@ end
 			["UpdateAllPlates"] = true,
 			["FullRefreshAllPlates"] = true,
 			["UpdatePlateClickSpace"] = true,
+			["EveryFrameFPSCheck"] = true,
 			["NameplateTick"] = true,
 			["OnPlayerTargetChanged"] = true,
 			["UpdateTarget"] = true,
@@ -10197,6 +10248,13 @@ end
 			["SendCommMessage"] = true,
 			["CreateCommHeader"] = true,
 			["SendComm"] = false,
+			["FPSData"] = {
+				["startTime"] = true,
+				["frames"] = true,
+				["platesUpdatedThisFrame"] = true,
+				["platesToUpdatePerFrame"] = true,
+				["curFPS"] = false,
+			}
 		},
 		
 		["DetailsFramework"] = {
