@@ -7563,6 +7563,7 @@ end
 		
 		if (not thisIndicator) then
 			local newIndicator = plateFrame.unitFrame.healthBar:CreateTexture (nil, "overlay")
+			newIndicator:SetDrawLayer("OVERLAY", 7)
 			newIndicator:SetSize (10, 10)
 			tinsert (plateFrame.IconIndicators, newIndicator)
 			thisIndicator = newIndicator
@@ -9638,6 +9639,9 @@ end
 		unitFrame.BuffFrame2:Hide()
 		unitFrame.ExtraIconFrame:Hide()
 		unitFrame.healthBar.unitName:Hide()
+		
+		showPlayerName = showPlayerName and (unitFrame.ActorType == ACTORTYPE_FRIENDLY_PLAYER or unitFrame.ActorType == ACTORTYPE_ENEMY_PLAYER)
+		showNameNpc = showNameNpc and (unitFrame.ActorType == ACTORTYPE_FRIENDLY_NPC or unitFrame.ActorType == ACTORTYPE_ENEMY_NPC)
 		
 		unitFrame.PlateFrame.IsFriendlyPlayerWithoutHealthBar = showPlayerName
 		unitFrame.PlateFrame.IsNpcWithoutHealthBar = showNameNpc
@@ -11851,7 +11855,7 @@ function SlashCmdList.PLATER (msg, editbox)
 		if (plateFrame) then
 			local npcId = plateFrame [MEMBER_NPCID]
 			if (npcId) then
-				local colorDB = Plater.db.profile.npc_colors
+				local colorDB = Plater.db.profile.npc_cache
 				if (not colorDB [npcId]) then
 					Plater.db.profile.npc_cache [npcId] = {plateFrame [MEMBER_NAME], Plater.ZoneName}
 					Plater:Msg ("Unit added.")
