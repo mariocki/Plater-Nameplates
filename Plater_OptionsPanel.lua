@@ -107,8 +107,8 @@ local update_wago_update_icons = function()
 	local mainFrame = PlaterOptionsPanelContainer
 	local scriptButton = mainFrame.AllButtons [6]
 	local modButton = mainFrame.AllButtons [7]
-	local profileButton = mainFrame.AllButtons [20]
-	local importButton = mainFrame.AllButtons [23]
+	local profileButton = mainFrame.AllButtons [21]
+	local importButton = mainFrame.AllButtons [24]
 	
 	if countMods > 0 then
 		modButton.updateIcon:Show()
@@ -215,6 +215,7 @@ function Plater.OpenOptionsPanel()
 		{name = "FriendlyPlayer", title = L["OPTIONS_TABNAME_PLAYERFRIENDLY"]},
 
 		{name = "ColorManagement", title = L["OPTIONS_TABNAME_COLORSNPC"]},
+		{name = "CastColorManagement", title = "Cast Colors"}, --localize-me
 		{name = "AnimationPanel", title = L["OPTIONS_TABNAME_ANIMATIONS"]},
 		{name = "Automation", title = L["OPTIONS_TABNAME_AUTO"]},
 		{name = "ProfileManagement", title = L["OPTIONS_TABNAME_PROFILES"]},
@@ -254,19 +255,22 @@ function Plater.OpenOptionsPanel()
 	
 	--3rd row
 	local colorsFrame = mainFrame.AllFrames [17]
-	local animationFrame = mainFrame.AllFrames [18]
-	local autoFrame = mainFrame.AllFrames [19]
-	local profilesFrame = mainFrame.AllFrames [20]
-	local advancedFrame = mainFrame.AllFrames [21]
-	local searchFrame = mainFrame.AllFrames [22]
-	--local wagoIoFrame = mainFrame.AllFrames [23] --wago_imports
+	local castColorsFrame = mainFrame.AllFrames [18]
+	local animationFrame = mainFrame.AllFrames [19]
+	local autoFrame = mainFrame.AllFrames [20]
+	local profilesFrame = mainFrame.AllFrames [21]
+	local advancedFrame = mainFrame.AllFrames [22]
+	local searchFrame = mainFrame.AllFrames [23]
+	--local wagoIoFrame = mainFrame.AllFrames [24] --wago_imports
 	
 	--
 	local colorNpcsButton = mainFrame.AllButtons [17]
 	local scriptButton = mainFrame.AllButtons [6]
 	local modButton = mainFrame.AllButtons [7]
-	local profileButton = mainFrame.AllButtons [20]
-	local importButton = mainFrame.AllButtons [23]
+	local profileButton = mainFrame.AllButtons [21]
+	local importButton = mainFrame.AllButtons [24]
+
+	Plater.CreateCastColorOptionsFrame(castColorsFrame)
 	
 	local generalOptionsAnchor = CreateFrame ("frame", "$parentOptionsAnchor", frontPageFrame, BackdropTemplateMixin and "BackdropTemplate")
 	generalOptionsAnchor:SetSize (1, 1)
@@ -417,8 +421,13 @@ function Plater.OpenOptionsPanel()
 					--do not export cache data, these data can be rebuild at run time
 					local captured_spells = Plater.db.profile.captured_spells
 					local aura_cache_by_name = Plater.db.profile.aura_cache_by_name
+					local captured_casts = Plater.db.profile.captured_casts
+					local npc_cache = Plater.db.profile.npc_cache
+
 					Plater.db.profile.captured_spells = {}
 					Plater.db.profile.aura_cache_by_name = {}
+					Plater.db.profile.captured_casts = {}
+					Plater.db.profile.npc_cache = {}
 					
 					--save mod/script editing
 					local hookFrame = mainFrame.AllFrames [7]
@@ -440,6 +449,8 @@ function Plater.OpenOptionsPanel()
 					--set back again the cache data
 					Plater.db.profile.captured_spells = captured_spells
 					Plater.db.profile.aura_cache_by_name = aura_cache_by_name
+					Plater.db.profile.captured_casts = captured_casts
+					Plater.db.profile.npc_cache = npc_cache
 				end)
 				
 				C_Timer.After (.3, function()
@@ -2821,15 +2832,9 @@ Plater.CreateAuraTesting()
 							
 							colorsFrame.RefreshScroll()
 							Plater:Msg ("npc colors imported.")
-						else
-							if (colorData.NpcNames) then
-								Plater:Msg ("this import look like Script, try importing in the Scripting tab.")
-							
-							elseif (colorData.LoadConditions) then
-								Plater:Msg ("this import look like a Mod, try importing in the Modding tab.")
-							end
 
-							Plater:Msg ("failed to import color data table.")
+						else
+							Plater.SendScriptTypeErrorMsg(colorData)
 						end
 					end
 					
@@ -3577,13 +3582,15 @@ Plater.CreateAuraTesting()
 						line.SpellName:SetTextTruncated (spellName, headerTable [3].width)
 						line.SourceName:SetTextTruncated (spellData.source, headerTable [4].width)
 						
+						local isCast = spellData.event == "SPELL_CAST_START" or spellData.event == "SPELL_CAST_SUCCESS"
+
 						if (spellData.type == "BUFF") then
 							line.SpellType.color = "PLATER_BUFF"
 							
 						elseif (spellData.type == "DEBUFF") then
 							line.SpellType.color = "PLATER_DEBUFF"
 							
-						elseif (spellData.event == "SPELL_CAST_START") then
+						elseif (isCast) then
 							line.SpellType.color = "PLATER_CAST"
 							
 						end
@@ -3593,8 +3600,7 @@ Plater.CreateAuraTesting()
 						line.SpellIDEntry:SetText (spellID)
 
 						--{event = token, source = sourceName, type = auraType, npcID = Plater:GetNpcIdFromGuid (sourceGUID or "")}
-
-						line.SpellType:SetText (spellData.event == "SPELL_CAST_START" and "Spell Cast" or spellData.event == "SPELL_AURA_APPLIED" and spellData.type)
+						line.SpellType:SetText (isCast and "Spell Cast" or spellData.event == "SPELL_AURA_APPLIED" and spellData.type)
 						
 						line.AddTrackList.SpellID = spellID
 						line.AddTrackList.AuraType = spellData.type
@@ -3681,7 +3687,7 @@ Plater.CreateAuraTesting()
 				--select all spells in the details! all spells panel
 				if (DetailsForgePanel and DetailsForgePanel.SelectModule) then
 					-- module 2 is the All Spells
-					DetailsForgePanel.SelectModule (_, _, 2)
+					DetailsForgePanel.SelectModule (_, _, 1)
 				end
 			else
 				Plater:Msg ("Details! Damage Meter is required and isn't installed, get it on Twitch App!")
