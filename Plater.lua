@@ -221,7 +221,7 @@ Plater.CanOverride_Members = {
 
 --> export strings identification
 Plater.Export_CastColors = "CastColor"
-Plater.Export_NpcColors = "CastColor"
+Plater.Export_NpcColors = "NpcColor"
 
 --> types of codes for each script in the Scripting tab (do not change these inside scripts)
 Plater.CodeTypeNames = { --private
@@ -5481,7 +5481,9 @@ end
 	
 	function Plater.ForceTickOnAllNameplates() --private
 		for _, plateFrame in ipairs (Plater.GetAllShownPlates()) do
-			Plater.NameplateTick (plateFrame.OnTickFrame, 10) --GetWorldDeltaSeconds()
+			if plateFrame.unitFrame.PlaterOnScreen then
+				Plater.NameplateTick (plateFrame.OnTickFrame, 10) --GetWorldDeltaSeconds()
+			end
 		end
 	end
 	
@@ -8316,10 +8318,6 @@ end
 			if (SPELL_WITH_ANIMATIONS [spellName] and sourceGUID == Plater.PlayerGUID) then
 				for _, plateFrame in ipairs (Plater.GetAllShownPlates()) do
 					if (plateFrame [MEMBER_GUID] == targetGUID and plateFrame.unitFrame.PlaterOnScreen) then
-						--disabled for patch 8.2
-						--need a workaround for GetPoints() not being available on this patch
-						
-						--testing new fix
 						Plater.DoNameplateAnimation (plateFrame, SPELL_WITH_ANIMATIONS [spellName], spellName, isCritical)
 					end
 				end
@@ -8371,9 +8369,20 @@ end
 			if (not DB_CAPTURED_SPELLS[spellID]) then
 				DB_CAPTURED_SPELLS[spellID] = {event = token, source = sourceName, npcID = Plater:GetNpcIdFromGuid (sourceGUID or ""), encounterID = Plater.CurrentEncounterID, encounterName = Plater.CurrentEncounterName}
 			end
-
+		end,
+		
+		SPELL_CAST_START = function (time, token, hidding, sourceGUID, sourceName, sourceFlag, sourceFlag2, targetGUID, targetName, targetFlag, targetFlag2, spellID, spellName, spellType, amount, overKill, school, resisted, blocked, absorbed, isCritical)
+			-- SPELL_CAST_START does not fire for instant casts, no need to capture those
 			if (not DB_CAPTURED_CASTS[spellID]) then
-				DB_CAPTURED_CASTS[spellID] = {npcID = Plater:GetNpcIdFromGuid(sourceGUID or 0), encounterName = Plater.CurrentEncounterName}
+
+				--check if this is a player spell
+				if (sourceFlag and bit.band(sourceFlag, 0x00000400) ~= 0) then --0x00000400 = player flag
+					local _, unitClass = UnitClass(sourceName)
+					DB_CAPTURED_CASTS[spellID] = {npcID = Plater:GetNpcIdFromGuid(sourceGUID or ""), encounterID = "", encounterName = unitClass or ""}
+
+				else
+					DB_CAPTURED_CASTS[spellID] = {npcID = Plater:GetNpcIdFromGuid(sourceGUID or ""), encounterID = Plater.CurrentEncounterID, encounterName = Plater.CurrentEncounterName}
+				end
 			end
 		end,
 
@@ -9667,6 +9676,7 @@ end
 		unitFrame.healthBar.unitName:Show()
 		
 		unitFrame.PlateFrame.IsFriendlyPlayerWithoutHealthBar = false
+		unitFrame.PlateFrame.IsNpcWithoutHealthBar = false
 		
 		unitFrame.ActorNameSpecial:Hide()
 		unitFrame.ActorTitleSpecial:Hide()
@@ -10322,6 +10332,8 @@ end
 				["UNITREACTION_NEUTRAL"] = false,
 				["UNITREACTION_FRIENDLY"] = false,
 			},
+			["Export_NpcColors"] = true,
+			["Export_CastColors"] = true,
 		},
 		
 		["DetailsFramework"] = {
