@@ -416,6 +416,8 @@ end
 			
 			if (indexScriptTable and type (indexScriptTable) == "table") then
 				
+				local scriptType = Plater.GetDecodedScriptType (indexScriptTable)
+				indexScriptTable.type = scriptType
 				indexScriptTable = Plater.MigrateScriptModImport (indexScriptTable)
 
 				--check if this is a mod or a script, if none show a msg for the import data
@@ -423,8 +425,6 @@ end
 					Plater.SendScriptTypeErrorMsg(indexScriptTable)
 					return
 				end
-
-				local scriptType = Plater.GetDecodedScriptType (indexScriptTable)
 				
 				local promptToOverwrite = false
 				local scriptDB = Plater.GetScriptDB (scriptType) or {}
