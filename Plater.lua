@@ -1968,8 +1968,8 @@ local class_specs_coords = {
 		DB_CASTBAR_HIDE_ENEMIES = profile.hide_enemy_castbars
 		DB_CASTBAR_HIDE_FRIENDLY = profile.hide_friendly_castbars
 		
-		DB_CAPTURED_SPELLS = profile.captured_spells
-		DB_CAPTURED_CASTS = profile.captured_casts
+		DB_CAPTURED_CASTS = PlaterDB.captured_casts
+		DB_CAPTURED_SPELLS = PlaterDB.captured_spells
 		
 		DB_USE_NAME_TRANSLIT = profile.use_name_translit
 
@@ -3538,7 +3538,7 @@ local class_specs_coords = {
 			healthBar.ExecuteGlowDown:Hide()
 			
 			--reset color values
-			healthBar.R, healthBar.G, healthBar.B = nil, nil, nil
+			healthBar.R, healthBar.G, healthBar.B, healthBar.A = nil, nil, nil, nil
 			
 			--reset the frame level and strata if using UIParent as the parent of the unitFrame
 			--the function checks if the option is enabled, no need to check here
@@ -3886,7 +3886,17 @@ local class_specs_coords = {
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --> addon initialization
 
+function Plater.InitializeSavedVariables()
+	local PlaterDB = _G.PlaterDB
+
+	--table to store casts with SPELL_CAST_START
+	PlaterDB.captured_casts = PlaterDB.captured_casts or {}
+	--table to store auras and any spell cast
+	PlaterDB.captured_spells = PlaterDB.captured_spells or {}
+end
+
 function Plater.OnInit() --private --~oninit ~init
+	Plater.InitializeSavedVariables()
 	Plater.RefreshDBUpvalues()
 	
 	-- do we need to support blizzard frames?
@@ -5138,8 +5148,8 @@ end
 	--internal function to change the health bar color
 	function Plater.ChangeHealthBarColor_Internal (healthBar, r, g, b, a, forceNoLerp) --private
 		a = a or 1
-		if (r ~= healthBar.R or g ~= healthBar.G or b ~= healthBar.B) then
-			healthBar.R, healthBar.G, healthBar.B = r, g, b
+		if (r ~= healthBar.R or g ~= healthBar.G or b ~= healthBar.B or a ~= healthBar.A) then
+			healthBar.R, healthBar.G, healthBar.B, healthBar.A = r, g, b, a
 			if (not DB_LERP_COLOR or forceNoLerp) then -- ~lerpcolor
 				healthBar.barTexture:SetVertexColor (r, g, b, a)
 			end
@@ -8367,29 +8377,35 @@ end
 		
 		SPELL_CAST_SUCCESS = function (time, token, hidding, sourceGUID, sourceName, sourceFlag, sourceFlag2, targetGUID, targetName, targetFlag, targetFlag2, spellID, spellName, spellType, amount, overKill, school, resisted, blocked, absorbed, isCritical)
 			if (not DB_CAPTURED_SPELLS[spellID]) then
-				DB_CAPTURED_SPELLS[spellID] = {event = token, source = sourceName, npcID = Plater:GetNpcIdFromGuid (sourceGUID or ""), encounterID = Plater.CurrentEncounterID, encounterName = Plater.CurrentEncounterName}
+				if (not sourceFlag or bit.band(sourceFlag, 0x00000400) == 0) then --not a player
+					local npcId = Plater:GetNpcIdFromGuid(sourceGUID or "")
+					if (npcId and npcId ~= 0) then
+						DB_CAPTURED_SPELLS[spellID] = {event = token, source = sourceName, npcID = npcId, encounterID = Plater.CurrentEncounterID, encounterName = Plater.CurrentEncounterName}
+					end
+				end
 			end
 		end,
 		
 		SPELL_CAST_START = function (time, token, hidding, sourceGUID, sourceName, sourceFlag, sourceFlag2, targetGUID, targetName, targetFlag, targetFlag2, spellID, spellName, spellType, amount, overKill, school, resisted, blocked, absorbed, isCritical)
-			-- SPELL_CAST_START does not fire for instant casts, no need to capture those
 			if (not DB_CAPTURED_CASTS[spellID]) then
-
-				--check if this is a player spell
-				if (sourceFlag and bit.band(sourceFlag, 0x00000400) ~= 0) then --0x00000400 = player flag
-					local _, unitClass = UnitClass(sourceName)
-					DB_CAPTURED_CASTS[spellID] = {npcID = Plater:GetNpcIdFromGuid(sourceGUID or ""), encounterID = "", encounterName = unitClass or ""}
-
-				else
-					DB_CAPTURED_CASTS[spellID] = {npcID = Plater:GetNpcIdFromGuid(sourceGUID or ""), encounterID = Plater.CurrentEncounterID, encounterName = Plater.CurrentEncounterName}
+				if (not sourceFlag or bit.band(sourceFlag, 0x00000400) == 0) then --not a player
+					local npcId = Plater:GetNpcIdFromGuid(sourceGUID or "")
+					if (npcId and npcId ~= 0) then
+						DB_CAPTURED_CASTS[spellID] = {npcID = Plater:GetNpcIdFromGuid(sourceGUID or ""), encounterID = Plater.CurrentEncounterID, encounterName = Plater.CurrentEncounterName}
+					end
 				end
 			end
 		end,
 
 		SPELL_AURA_APPLIED = function (time, token, hidding, sourceGUID, sourceName, sourceFlag, sourceFlag2, targetGUID, targetName, targetFlag, targetFlag2, spellID, spellName, spellType, amount, overKill, school, resisted, blocked, absorbed, isCritical)
-			if (not DB_CAPTURED_SPELLS [spellID]) then
-				local auraType = amount
-				DB_CAPTURED_SPELLS [spellID] = {event = token, source = sourceName, type = auraType, npcID = Plater:GetNpcIdFromGuid (sourceGUID or ""), encounterID = Plater.CurrentEncounterID, encounterName = Plater.CurrentEncounterName}
+			if (not DB_CAPTURED_SPELLS[spellID]) then
+				if (not sourceFlag or bit.band(sourceFlag, 0x00000400) == 0) then --not a player
+					local npcId = Plater:GetNpcIdFromGuid(sourceGUID or "")
+					if (npcId and npcId ~= 0) then
+						local auraType = amount
+						DB_CAPTURED_SPELLS [spellID] = {event = token, source = sourceName, type = auraType, npcID = npcId, encounterID = Plater.CurrentEncounterID, encounterName = Plater.CurrentEncounterName}
+					end
+				end
 			end
 			
 			if IS_WOW_PROJECT_NOT_MAINLINE then
